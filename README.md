@@ -13,6 +13,7 @@ _A cross-platform command-line tool (Windows, Linux, macOS) for uploading standa
 * 🔁 Force playlist paths to use `/` or `\` to match your Plex server’s file path format (Linux, macOS, NAS, or Windows).
 * 🛠️ Modify playlist file paths using find & replace rules, ensuring they align with how Plex sees your media library.
 * 🧹 Deletes all Plex playlists before upload (optional)
+* 🆔 Preserves playlist IDs to maintain compatibility with external players (e.g. Sonos)
 * 📘 Logs activity to timestamped text files
 
 ## Download
@@ -220,6 +221,10 @@ Use forward slashes in the `--find` string to match the slash transformation
 ```
 
 This will correctly transform the path to: `/mnt/media/Pop/track.mp3`
+
+###❓ Why does the tool only clear the contents of existing playlists instead of deleting and recreating them?
+
+Some external apps and hardware players (such as Sonos) reference Plex playlists by their unique internal ID. If the playlist is deleted and recreated, it gets a new ID, which can break external links or integrations. To maintain compatibility, the tool clears the playlist's contents and repopulates it instead of deleting the entire playlist. This ensures external systems retain their connection to the playlist.
 
 ## Questions/problems?
 
