@@ -13,7 +13,7 @@ _A cross-platform command-line tool (Windows, Linux, macOS) for uploading standa
 * 🔁 Force playlist paths to use `/` or `\` to match your Plex server’s file path format (Linux, macOS, NAS, or Windows).
 * 🛠️ Modify playlist file paths using find & replace rules, ensuring they align with how Plex sees your media library.
 * 🧹 Deletes all Plex playlists before upload (optional)
-* 🆔 Preserves playlist IDs to maintain compatibility with external players (e.g. Sonos)
+* 🔗 Preserves playlist IDs to maintain compatibility with external players (e.g. Sonos)
 * 📘 Logs activity to timestamped text files
 
 ## Download
@@ -24,12 +24,12 @@ Each release includes the following files (`x.x.x` denotes the version number):
 
 |Filename|Description|
 |:--------|:-----------|
-|`PlexPU-x.x.x-win-x64.exe`|✅ For Windows 10 and 11 ⬅️ **Most users should choose this**
+|`PlexPU-x.x.x-win-x64.exe`|✅ For Microsoft Windows 10 and 11 ⬅️ **Most users should choose this**
 |`PlexPU-x.x.x-linux-x64`|For Linux on Intel/AMD CPUs|
 |`PlexPU-x.x.x-linux-arm64`|For Linux on ARM (e.g. Raspberry Pi)|
 |`PlexPU-x.x.x-osx-arm64`|For macOS on Apple Silicon (eg. M1 and newer)|
 |Source code (zip)|ZIP archive of the source code|
-|Source code (tar.gz)|ZIP archive of the source code|
+|Source code (tar.gz)|TAR.GZ archive of the source code|
 
 > [!TIP]
 > There is no installer. Just download the appropriate file and run it from the command line.
@@ -65,7 +65,7 @@ PlexPU -s 192.168.1.100 -t ABCDEFG -l 4 -I "/home/mrsilver/playlists/" -m -w
 PlexPU --server 192.168.1.100 --token ABCDEFG --library 4 --import "/home/mrsilver/playlists/running.m3u" --mirror --windows
 ```
 * Connect to Plex Server running at `192.168.1.100`
-* Use Plex token `ABDEFGH`
+* Use Plex token `ABCDEFG`
 * Use music library ID `4`
 * Upload all playlists in `/home/mrsilver/playlists/`
 * Remove any playlists from Plex that aren't uploaded (mirror)
@@ -78,14 +78,14 @@ PlexPU --server pimachine --token ABCDEFG --library 10 --import "C:\Playlists" -
 ```
 * Connect to Plex Server running at `pimachine`
 * Use Plex token `ABCDEFG`
-* Use music library `ID` 10
+* Use music library ID `10`
 * Upload all playlists found in `C:\Playlists`
 * Replace Windows backslashes (`\`) in the playlist path to forward slashes (`/`)
-* Replace `C:/Users/MrSilver/Music/iTunes/iTunes Media/Music` in the playlist paths to `/home/pi/music`
+* Replace `C:\Users\MrSilver\Music\iTunes\iTunes Media\Music` in the playlist paths to `/home/pi/music`
 * Delete all playlists on Plex first before importing
 
 > [!IMPORTANT]
-> Using `-l` will cause the any backslashes (`\`) in the filename and path to be replaced with with forward slashes (`/`) **before any search and replace is performed**. This is why the search string is written as `C:/Users/MrSilver/Music/iTunes/iTunes Media/Music`.
+> When using `--linux` or `--windows`, path slashes are converted before any `--find` and `--replace` operations. Make sure your `--find` string reflects the adjusted slash style. In the example above, backslashes are converted to `/`, so `--find` must also use forward slashes (`/`).
 
 ## Command line options
 
@@ -147,7 +147,7 @@ Replaces matched text from `--find` with this new value. If `--find` is used and
 ### 📖 Help
 
 - **`/?`, `-h`, `--help`**  
-  Displays the full help text with all available options.
+  Displays the full help text with all available options, credits and the location of the log files.
 
 ## Common questions
 
@@ -187,19 +187,19 @@ However you can enable this with a couple of steps:
 ### ❓Can I run this on a headless Linux server or NAS?
 Yes. The tool is a command-line application and can be run from a headless environment like a Linux server or NAS, provided the .NET 8.0 runtime is installed and the binary has execute permissions.
 
-### ❓What does the --mirror option do exactly?
-When enabled, `--mirror` will remove any Plex playlists that are not represented in the M3U files you're importing. This allows you to keep your Plex playlists in sync with an external source, such as a local music manager or export directory. Mirroring is one way only, you cannot use this tool the export changes you've made to your playlists in Plex.
+### ❓What does the `--mirror` option do exactly?
+When enabled, `--mirror` will remove any Plex playlists that are not represented in the M3U files you're importing. This allows you to keep your Plex playlists in sync with an external source, such as a local music manager or export directory. Mirroring is one-way only, you cannot use this tool to export changes you've made to your playlists in Plex.
 
 ### ❓Does this overwrite existing playlists in Plex?
 Only if their content has changed. The tool compares the track list in your M3U file with the existing Plex playlist. If they differ, it clears the Plex playlist and re-uploads the correct tracks. If they are identical, it skips the update.
 
 ### ❓How do I handle mismatched paths between the source and Plex server?
-You can use the --find and --replace options to rewrite the file paths in your playlist to match what Plex expects. For example, if your M3U uses D:\Music and Plex expects \\server\Music, use `--find "D:\Music" --replace "\\server\Music"`
+You can use the `--find` and `--replace` options to rewrite the file paths in your playlist to match what Plex expects. For example, if your M3U uses `D:\Music` and Plex expects `\\server\Music`, use `--find "D:\Music" --replace "\\server\Music"`
 
 Also use `--unix` or `--windows` if Plex uses forward or backslashes differently than your M3U file.
 
 ### ❓I'm using `--windows` or `--unix`. Why isn't `--find` matching?
-The `--window`s or `--unix` options change all slashes in the song paths before the `--find` and `--replace` logic runs. This means that if your `--find` string uses the original slash style (e.g., backslashes on Windows), it won’t match the transformed path.
+The `--windows` and `--unix` options change all slashes in the song paths before the `--find` and `--replace` logic runs. This means that if your `--find` string uses the original slash style (e.g., backslashes on Windows), it won’t match the transformed path.
 
 As an example, lets assume your M3U contains the following:
 ```
@@ -222,7 +222,7 @@ Use forward slashes in the `--find` string to match the slash transformation
 
 This will correctly transform the path to: `/mnt/media/Pop/track.mp3`
 
-###❓ Why does the tool only clear the contents of existing playlists instead of deleting and recreating them?
+### ❓ Why does the tool only clear the contents of existing playlists instead of deleting and recreating them?
 
 Some external apps and hardware players (such as Sonos) reference Plex playlists by their unique internal ID. If the playlist is deleted and recreated, it gets a new ID, which can break external links or integrations. To maintain compatibility, the tool clears the playlist's contents and repopulates it instead of deleting the entire playlist. This ensures external systems retain their connection to the playlist.
 
