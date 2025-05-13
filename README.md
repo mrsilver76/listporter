@@ -66,7 +66,7 @@ PlexPU --server 192.168.1.100 --token ABCDEFG --library 4 --import "/home/mrsilv
 * Connect to Plex Server running at `192.168.1.100`
 * Use Plex token `ABDEFGH`
 * Use music library ID `4`
-* Upload all playlists in `/home/mrsilver/playlists`
+* Upload all playlists in `/home/mrsilver/playlists/`
 * Remove any playlists from Plex that aren't uploaded (mirror)
 * Replace Linux forward slashes (`/`) in the playlist path to backslashes (`\`)
 
@@ -110,24 +110,50 @@ PlexPU -s <address>[:<port>] -t <token> -l <library> -i <path> [options]
   
 #### 🔄 Playlist sync options
 
-- **`-d`, `--delete`**
+- **`-d`, `--delete`**   
   Deletes all existing playlists in the specified Plex music library before uploading any new ones.
 
-- **`-m`, `--mirror`**
+- **`-m`, `--mirror`**   
   Mirrors Plex playlists to match the uploaded `.m3u` files. Any Plex playlists not represented in the imported list will be removed.
 
-#### 🧭 Playlist song path rewriting options
+#### 🧭 Path rewriting options
 
-- **`-f <text>`, `--find <text>`
-Finds and replaces part of each song’s file path. Use with --replace to rewrite paths to match Plex's file structure.
+If your `.m3u` playlists reference song locations that Plex can’t access (e.g. local drives or mismatched paths), those tracks won’t be playable. For instance, a playlist might use a local path like `D:\MyMusic`, while your Plex server expects a network path like `\\homepc\MyMusic` or `/mnt/music`.
 
-- **`-r <text>`, `--replace <text>`
-Replaces matched text from --find with the specified string.
+These options let you rewrite the file paths in the playlist so they match the structure known to your Plex server.
 
-- **`-u`, `--unix`
-Force playlist paths to use forward slashes (/), often required for Plex servers running on Linux, macOS, or NAS.
+- **`-u`, `--unix`**   
+Force playlist paths to use forward slashes (`/`), often required for Plex servers running on Linux, macOS, or NAS.
 
-- **`-w`, `--windows`
-Force playlist paths to use backslashes (\), as used by Plex servers on Windows.
+- **`-w`, `--windows`**   
+Force playlist paths to use backslashes (`\`), as used by Plex servers on Windows.
 
-### 🎵 Playlist selection
+- **`-f <text>`, `--find <text>`**
+Searches for a substring in each song's file path. Intended for use with `--replace` to rewrite paths. Matching is case-insensitive and only one `--find` string is supported per run.
+
+> [!IMPORTANT]
+> If you're also using `--unix` or `--windows`, the slash conversion happens before the search-and-replace step. Be sure your `--find` value uses the correct slash style for matching.
+
+- **`-r <text>`, `--replace <text>`**   
+Replaces matched text from `--find` with this new value. If `--find` is used and there is no `--replace` value, then it will be assumed to be blank and the matching string will be removed. 
+
+### 📖 Help
+
+- **`/?`, `-h`, `--help`**  
+  Displays the full help text with all available options.
+
+## Common questions
+
+### ❓Can I just double-click on this program from Windows Explorer and it run?
+
+The programs expects a number of command lines argument to run, so double-clicking on it in Explorer will not work.
+
+However you can enable this with a couple of steps:
+
+1. Place `PlexPU.exe` wherever you would like to store it.
+2. Right-click on `PlexPU.exe`, select "Show more options" and then "Create shortcut".
+3. Right-click on the newly created `PlexPU.exe - Shortcut` and select "Properties"
+4. In the text box labelled "Target" add the arguments you want to use to the end of the string. Full details of all the arguments are documented [here](#command-line-options).
+5. Click on "OK"
+6. To run, double-click on `PlexPU.exe - Shortcut`. You can rename this to something more useful and move it elsewhere if you'd like.
+7. Once Plex Playlist Updater has finished running, the pop-up window will close automatically.
