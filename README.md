@@ -118,7 +118,7 @@ PlexPU -s <address>[:<port>] -t <token> -l <library> -i <path> [options]
 #### 🔄 Playlist sync options
 
 - **`-d`, `--delete`**   
-  Deletes all existing playlists in the specified Plex music library before uploading any new ones.
+  Deletes all existing playlists in the specified Plex music library before uploading any new ones. 
 
 - **`-m`, `--mirror`**   
   Mirrors Plex playlists to match the uploaded `.m3u` files. Any Plex playlists not represented in the imported list will be removed.
@@ -127,7 +127,7 @@ PlexPU -s <address>[:<port>] -t <token> -l <library> -i <path> [options]
 
 If your `.m3u` playlists reference song locations that Plex can’t access (e.g. local drives or mismatched paths), those tracks won’t be playable. For instance, a playlist might use a local path like `D:\MyMusic`, while your Plex server expects a network path like `\\homepc\MyMusic` or `/mnt/music`.
 
-These options let you rewrite the file paths in the playlist so they match the structure known to your Plex server.
+These options let you adjust how file paths are interpreted during upload, so they match the structure expected by your Plex server. The playlist files themselves are not changed.
 
 - **`-u`, `--unix`**   
 Force playlist paths to use forward slashes (`/`), often required for Plex servers running on Linux, macOS, or NAS.
