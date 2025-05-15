@@ -1,8 +1,9 @@
 # Plex Playlist Uploader (PlexPU)
 _A cross-platform command-line tool (Windows, Linux, macOS) for uploading standard or extended `.m3u` audio playlists to Plex Media Server. Supports path rewriting, selective updates and optional mirroring of playlists._
 
-> [!NOTE]
-> This program is a complete rewrite of [iTunes Playlist exporter](https://github.com/mrsilver76/itunes_playlist_exporter) and does not export playlists from iTunes. If you wish to export playlists from iTunes then please look at [TuneLift](https://github.com/mrsilver76/tunelift).
+> [!TIP]
+> Using iTunes on Windows? [TuneLift](https://github.com/mrsilver76/tunelift) makes it easy to export `.m3u` playlists, perfect for use with Plex Playlist Uploader.
+
 
 ## Features
 * 💻 Runs on Windows, Linux (x64 & ARM) and macOS.
@@ -47,29 +48,29 @@ Each release includes the following files (`x.x.x` denotes the version number):
 
 ## Quick start guide
 
-Below are a couple of command scenarios for using PlexPU. They will work on all platforms.
+Below are a couple of command scenarios for using Plex Playlist Uploader. They will work on all platforms.
 
 ```
-PlexPU -s 127.0.0.1 -t ABCDEFG -l 8 -i "C:\Playlists\Running.m3u"
+PlexPU -s 127.0.0.1 -t ABCDEFG -l 8 -i "C:\Playlists" -m
 
-PlexPU --server 127.0.0.1 --token ABCDEFG --library 8 --import "C:\Playlists\Running.m3u"
+PlexPU --server 127.0.0.1 --token ABCDEFG --library 8 --import "C:\Playlists" --mirror
 ```
 * Connect to the Plex server running on the same machine
 * Use Plex token `ABDEFGH`
 * Use music library ID `8`
-* Upload only `C:\Playlists\Running.m3u`
-
+* Upload all playlists in `C:\Playlists\`
+* Remove any playlists from Plex that aren't uploaded (mirror)
+  
 ```
-PlexPU -s 192.168.1.100 -t ABCDEFG -l 4 -I "/home/mrsilver/playlists/" -m -w
+PlexPU -s 192.168.1.100 -t ABCDEFG -l 4 -I "/home/mrsilver/playlists/Running.m3u" -w
 
-PlexPU --server 192.168.1.100 --token ABCDEFG --library 4 --import "/home/mrsilver/playlists/running.m3u" --mirror --windows
+PlexPU --server 192.168.1.100 --token ABCDEFG --library 4 --import "/home/mrsilver/playlists/running.m3u" --windows
 ```
 * Connect to Plex Server running at `192.168.1.100`
 * Use Plex token `ABCDEFG`
 * Use music library ID `4`
 * Upload all playlists in `/home/mrsilver/playlists/`
-* Remove any playlists from Plex that aren't uploaded (mirror)
-* Replace Linux forward slashes (`/`) in the playlist path to backslashes (`\`)
+* Replace Linux forward slashes (`/`) in the playlist path to Windows backslashes (`\`)
 
 ```
 PlexPU -s pimachine -t ABCDEFG -l 10 -i "C:\Playlists" -l -f "C:/Users/MrSilver/Music/iTunes/iTunes Media/Music" -r "/home/pi/music" -d
@@ -118,10 +119,10 @@ PlexPU -s <address>[:<port>] -t <token> -l <library> -i <path> [options]
 #### 🔄 Playlist sync options
 
 - **`-d`, `--delete`**   
-  Deletes all existing playlists in the specified Plex music library before uploading any new ones. 
+  Deletes all existing playlists in the specified Plex music library before uploading any new ones. Only audio playlists that are manual and entirely within the specified library are affected.
 
 - **`-m`, `--mirror`**   
-  Mirrors Plex playlists to match the uploaded `.m3u` files. Any Plex playlists not represented in the imported list will be removed.
+  Mirrors Plex playlists to match the uploaded `.m3u` files. Any Plex playlists not represented in the imported list will be removed. Only audio playlists that are manual and entirely within the specified library are affected.
 
 #### 🧭 Path rewriting options
 
@@ -153,13 +154,13 @@ Replaces matched text from `--find` with this new value. If `--find` is used and
 
 ### ❓Why does it report less playlists than I actually have? Why are some playlists not modified or deleted?
 
-PlexPU will only recognise, process and delete playlists which meet **all** of the following criteria:
+PlexPU will only recognise, update, or delete playlists that meet all of the following criteria:**
 
-1. They are an audio playlist.
-2. They are not a smart playlist, that is a playlist that automatically updates based on defined criteria.
-3. All items within the playlist come from the libary ID defined by `--library`
+1. The playlist is an audio playlist.
+2. It is a manual playlist (not a smart or dynamic rule-based one).
+3. All tracks in the playlist belong to the Plex library ID specified by `--library`.
 
-Playlists that do not meet all of these criteria will be ignored.
+Any playlist that does not meet all of these conditions will be ignored.
 
 ### ❓Where are the logs stored? What do they show?
 
@@ -190,6 +191,9 @@ Yes. The tool is a command-line application and can be run from a headless envir
 ### ❓What does the `--mirror` option do exactly?
 When enabled, `--mirror` will remove any Plex playlists that are not represented in the M3U files you're importing. This allows you to keep your Plex playlists in sync with an external source, such as a local music manager or export directory. Mirroring is one-way only, you cannot use this tool to export changes you've made to your playlists in Plex.
 
+> [!CAUTION]
+> Be careful when using `--mirror` with a single file: this will cause all other playlists in the library to be removed, keeping only the one you provided.
+
 ### ❓Does this overwrite existing playlists in Plex?
 Only if their content has changed. The tool compares the track list in your M3U file with the existing Plex playlist. If they differ, it clears the Plex playlist and re-uploads the correct tracks. If they are identical, it skips the update.
 
@@ -206,21 +210,23 @@ As an example, lets assume your M3U contains the following:
 D:\Music\Pop\track.mp3
 ```
 
-If you run the tool with
+If you run the tool with:
 ```
 --unix --find "D:\Music" --replace "/mnt/media"
 ```
-then after `--unix` is actioned, the path is transformed to `D:/Music/Pop/track.mp3`.
-
+then after `--unix` is actioned, the path is transformed to:
+```
+D:/Music/Pop/track.mp3
+```
 So the `--find` string `"D:\Music"` doesn't match `"D:/Music"`.
 
 ✅ **Correct Usage**   
-Use forward slashes in the `--find` string to match the slash transformation
+Use forward slashes in the `--find` string to match the slash transformation:
 ```
 --unix --find "D:/Music" --replace "/mnt/media"
 ```
 
-This will correctly transform the path to: `/mnt/media/Pop/track.mp3`
+This will correctly transform the path to `/mnt/media/Pop/track.mp3`
 
 ### ❓ Why does the tool only clear the contents of existing playlists instead of deleting and recreating them?
 
