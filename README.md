@@ -2,7 +2,7 @@
 _A cross-platform command-line tool (Windows, Linux, macOS) for uploading standard or extended `.m3u` audio playlists to Plex Media Server. Supports path rewriting, selective updates and optional mirroring of playlists._
 
 > [!TIP]
-> Using iTunes on Windows? [TuneLift](https://github.com/mrsilver76/tunelift) makes it easy to export `.m3u` audio playlists, perfect for use with Plex Playlist Uploader.
+> Using iTunes on Windows? [TuneLift](https://github.com/mrsilver76/tunelift) makes it easy to export your iTunes playlists to `.m3u` files.
 
 
 ## 🧰 Features
