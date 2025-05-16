@@ -236,9 +236,14 @@ Some external apps and hardware players (such as Sonos) reference Plex playlists
 
 Please raise an issue at https://github.com/mrsilver76/plex-playlist-uploader/issues.
 
+## 📝 Attribution
+
+- Plex is a registered trademark of Plex, Inc. This tool is not affiliated with or endorsed by Plex, Inc.
+- Music & multimedia icon by paonkz - Flaticon (https://www.flaticon.com/free-icons/music-and-multimedia)
+
 ## 🕰️ Version history
 
-### 0.9.0 (15 May 2025)
+### 0.9.0 (16 May 2025)
 - Initial release, a C# port from "iTunes Playlist Exporter".
 - Now cross-platform, with support for Windows, Linux (x64 and ARM) and macOS.
 - Removed iTunes exporting functionality, now handled by a separate tool called [TuneLift](https://github.com/mrsilver76/tunelift).
