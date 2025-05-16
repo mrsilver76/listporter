@@ -5,7 +5,7 @@ _A cross-platform command-line tool (Windows, Linux, macOS) for uploading standa
 > Using iTunes on Windows? [TuneLift](https://github.com/mrsilver76/tunelift) makes it easy to export `.m3u` audio playlists, perfect for use with Plex Playlist Uploader.
 
 
-## Features
+## 🧰 Features
 * 💻 Runs on Windows, Linux (x64 & ARM) and macOS.
 * 📂 Uploads standard or extended M3U audio playlists to Plex.
 * 🌐 Works with any Plex server platform (Windows, Linux, NAS, macOS) via the Plex API.
@@ -17,7 +17,7 @@ _A cross-platform command-line tool (Windows, Linux, macOS) for uploading standa
 * 🔗 Preserves playlist IDs to maintain compatibility with external players (e.g. Sonos)
 * 📘 Logs activity to timestamped text files
 
-## Download
+## 📦 Download
 
 Get the latest version from https://github.com/mrsilver76/plex-playlist-uploader/releases.
 
@@ -37,7 +37,7 @@ Each release includes the following files (`x.x.x` denotes the version number):
 
 ### Linux/macOS users
 
-* You may need to install the [.NET 8.0 runtime](https://dotnet.microsoft.com/en-us/download/dotnet/8.0/runtime).
+* You will need to install the [.NET 8.0 runtime](https://dotnet.microsoft.com/en-us/download/dotnet/8.0/runtime).
 * Don't forget to make the file executable: `chmod +x PlexPU-x.x.x-<your-platform>`
 
 ### Platform testing notes
@@ -46,7 +46,7 @@ Each release includes the following files (`x.x.x` denotes the version number):
 * Tested moderately: Linux (ARM)
 * Not tested at all: Linux (x64), macOS
 
-## Quick start guide
+## 🚀 Quick start guide
 
 Below are a couple of command scenarios for using Plex Playlist Uploader. They will work on all platforms.
 
@@ -88,13 +88,13 @@ PlexPU --server pimachine --token ABCDEFG --library 10 --import "C:\Playlists" -
 > [!IMPORTANT]
 > When using `--linux` or `--windows`, path slashes are converted before any `--find` and `--replace` operations. Make sure your `--find` string reflects the adjusted slash style. In the example above, backslashes are converted to `/`, so `--find` must also use forward slashes (`/`).
 
-## Command line options
+## 💻 Command line options
 
 ```
 PlexPU -s <address>[:<port>] -t <token> -l <library> -i <path> [options]
 ```
 
-### 🟩 Mandatory arguments
+### Mandatory arguments
 
 - **`-s <address>[:<port>]`, `--server <address>[:<port>]`**   
   Plex server address, optionally including the port (e.g. `localhost:32400`). If you do not supply a port then the default (`32400`) will be used.
@@ -111,9 +111,9 @@ PlexPU -s <address>[:<port>] -t <token> -l <library> -i <path> [options]
 - **`-i <path>`, `--import <path>`**   
   Path to a single .m3u file or a directory containing multiple .m3u files.
 
-### 🛠️ Optional arguments
+### Optional arguments
   
-#### 🔄 Playlist sync options
+#### Playlist sync options
 
 - **`-d`, `--delete`**   
   Deletes all existing playlists in the specified Plex music library before uploading any new ones. Only audio playlists that are manual and entirely within the specified library are affected.
@@ -121,7 +121,7 @@ PlexPU -s <address>[:<port>] -t <token> -l <library> -i <path> [options]
 - **`-m`, `--mirror`**   
   Mirrors Plex playlists to match the uploaded `.m3u` files. Any Plex playlists not represented in the imported list will be removed. Only audio playlists that are manual and entirely within the specified library are affected.
 
-#### 🧭 Path rewriting options
+#### Path rewriting options
 
 If your `.m3u` playlists reference song locations that Plex can’t access (e.g. local drives or mismatched paths), those tracks won’t be playable. For instance, a playlist might use a local path like `D:\MyMusic`, while your Plex server expects a network path like `\\homepc\MyMusic` or `/mnt/music`.
 
@@ -142,33 +142,36 @@ Searches for a substring in each song's file path. Intended for use with `--repl
 - **`-r <text>`, `--replace <text>`**   
 Replaces matched text from `--find` with this new value. If `--find` is used and there is no `--replace` value, then it will be assumed to be blank and the matching string will be removed. 
 
-### 📖 Help
+### Help
 
 - **`/?`, `-h`, `--help`**  
   Displays the full help text with all available options, credits and the location of the log files.
 
-## Common questions
+## 🧩 How playlists are matched on Plex
 
-### ❓Why does it report less playlists than I actually have? Why are some playlists not modified or deleted?
+The program will only recognise and process playlists on your Plex server that meet all of the following criteria:
 
-PlexPU will only recognise, update, or delete playlists that meet all of the following criteria:
+1. All items in the playlist must be audio - playlists containing video or mixed content are ignored.
+2. The playlist is manual, not a smart/dynamic playlist.
+3. All audio tracks in the playlist belong to the library ID provided via `--library`.
 
-1. The playlist is an audio playlist.
-2. It is a manual playlist (not a smart or dynamic rule-based one).
-3. All tracks in the playlist belong to the Plex library ID specified by `--library`.
-
-Any playlist that does not meet all of these conditions will be ignored.
-
-### ❓Where are the logs stored? What do they show?
-
-PlexPU outputs a more detailed set of logs than displayed on the screen. These can be helpful when trying to debug so, if you raise an issue, please be prepared to share them. 
-
-You can find out where the logs are located by reading the output of `PlexPU -h`. There is a hidden command line argument `-v` or `--verbose` which will also log the API calls made to the Plex server. Logs older than 14 days are deleted every time PlexPU runs.
+These rules apply to all playlist-related operations, including `--mirror` and `--delete`.
 
 >[!NOTE]
->All log files generated by PlexPU automatically censor the Plex token and Machine ID.
+>The program will only report the number of playlists that meet these criteria, not the total number of playlists on your Plex server. If a playlist doesn’t appear or isn’t deleted/modified as expected, it likely does not meet one or more of these conditions.
 
-### ❓Can I just double-click on this program from Windows Explorer and it run?
+## ❓ Common questions
+
+### Where are the logs stored? What do they show?
+
+The program outputs a more detailed set of logs than displayed on the screen. These can be helpful when trying to debug so, if you raise an issue, please be prepared to share them. 
+
+You can find out where the logs are located by reading the output of `PlexPU -h`. There is a hidden command line argument `-v` or `--verbose` which will also log the API calls made to the Plex server. Logs older than 14 days are deleted every time the program runs.
+
+>[!NOTE]
+>All log files generated by the program automatically censor the Plex token and Machine ID.
+
+### Can I just double-click on this program from Windows Explorer and it run?
 
 The programs expects a number of command lines argument to run, so double-clicking on it in Explorer will not work.
 
@@ -182,24 +185,24 @@ However you can enable this with a couple of steps:
 6. To run, double-click on `PlexPU.exe - Shortcut`. You can rename this to something more useful and move it elsewhere if you'd like.
 7. Once Plex Playlist Updater has finished running, the pop-up window will close automatically.
 
-### ❓Can I run this on a headless Linux server or NAS?
+### Can I run this on a headless Linux server or NAS?
 Yes. The tool is a command-line application and can be run from a headless environment like a Linux server or NAS, provided the .NET 8.0 runtime is installed and the binary has execute permissions.
 
-### ❓What does the `--mirror` option do exactly?
+### What does the `--mirror` option do exactly?
 When enabled, `--mirror` will remove any Plex playlists that are not represented in the M3U files you're importing. This allows you to keep your Plex playlists in sync with an external source, such as a local music manager or export directory. Mirroring is one-way only, you cannot use this tool to export changes you've made to your playlists in Plex.
 
 > [!CAUTION]
 > Be careful when using `--mirror` with a single file: this will cause all other playlists in the library to be removed, keeping only the one you provided.
 
-### ❓Does this overwrite existing playlists in Plex?
+### Does this overwrite existing playlists in Plex?
 Only if their content has changed. The tool compares the track list in your M3U file with the existing Plex playlist. If they differ, it clears the Plex playlist and re-uploads the correct tracks. If they are identical, it skips the update.
 
-### ❓How do I handle mismatched paths between the source and Plex server?
+### How do I handle mismatched paths between the source and Plex server?
 You can use the `--find` and `--replace` options to rewrite the file paths in your playlist to match what Plex expects. For example, if your M3U uses `D:\Music` and Plex expects `\\server\Music`, use `--find "D:\Music" --replace "\\server\Music"`
 
 Also use `--unix` or `--windows` if Plex uses forward or backslashes differently than your M3U file.
 
-### ❓I'm using `--windows` or `--unix`. Why isn't `--find` matching?
+### I'm using `--windows` or `--unix`. Why isn't `--find` matching?
 The `--windows` and `--unix` options change all slashes in the song paths before the `--find` and `--replace` logic runs. This means that if your `--find` string uses the original slash style (e.g., backslashes on Windows), it won’t match the transformed path.
 
 As an example, lets assume your M3U contains the following:
@@ -225,15 +228,15 @@ Use forward slashes in the `--find` string to match the slash transformation:
 
 This will correctly transform the path to `/mnt/media/Pop/track.mp3`
 
-### ❓ Why does the tool only clear the contents of existing playlists instead of deleting and recreating them?
+### Why does the tool only clear the contents of existing playlists instead of deleting and recreating them?
 
 Some external apps and hardware players (such as Sonos) reference Plex playlists by their unique internal ID. If the playlist is deleted and recreated, it gets a new ID, which can break external links or integrations. To maintain compatibility, the tool clears the playlist's contents and repopulates it instead of deleting the entire playlist. This ensures external systems retain their connection to the playlist.
 
-## Questions/problems?
+## 🛟 Questions/problems?
 
 Please raise an issue at https://github.com/mrsilver76/plex-playlist-uploader/issues.
 
-## Version history
+## 🕰️ Version history
 
 ### 0.9.0 (15 May 2025)
 - Initial release, a C# port from "iTunes Playlist Exporter".
