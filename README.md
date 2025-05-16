@@ -248,7 +248,7 @@ Please raise an issue at https://github.com/mrsilver76/plex-playlist-uploader/is
 - Initial release, a C# port from "iTunes Playlist Exporter".
 - Now cross-platform, with support for Windows, Linux (x64 and ARM) and macOS.
 - Removed iTunes exporting functionality, now handled by a separate tool called [TuneLift](https://github.com/mrsilver76/tunelift).
-- Added automatic version checking with update notifications
+- Added automatic version checking with update notifications.
 - Playlists are only updated if they have changed, eliminating the need to delete and re-upload everything.
 - Added `--mirror` option to remove playlists from Plex that no longer exist in the input directory.
 - Modified playlists retain their original playlist ID, so external players like Sonos can continue to reference them.
