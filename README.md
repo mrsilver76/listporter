@@ -240,6 +240,7 @@ Please raise an issue at https://github.com/mrsilver76/plex-playlist-uploader/is
 
 - Plex is a registered trademark of Plex, Inc. This tool is not affiliated with or endorsed by Plex, Inc.
 - Music & multimedia icon by paonkz - Flaticon (https://www.flaticon.com/free-icons/music-and-multimedia)
+- With thanks to https://www.plexopedia.com/plex-media-server/api/ for Plex API documentation.
 
 ## 🕰️ Version history
 
