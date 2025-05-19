@@ -185,7 +185,7 @@ However you can enable this with a couple of steps:
 1. Place `ListPorter.exe` wherever you would like to store it.
 2. Right-click on `ListPorter.exe`, select "Show more options" and then "Create shortcut".
 3. Right-click on the newly created `ListPorter.exe - Shortcut` and select "Properties"
-4. In the text box labelled "Target" add the arguments you want to use to the end of the string. Full details of all the arguments are documented [here](#command-line-options).
+4. In the text box labelled "Target" add the arguments you want to use to the end of the string. Full details of all the arguments are documented [here](#-command-line-options).
 5. Click on "OK"
 6. To run, double-click on `ListPorter.exe - Shortcut`. You can rename this to something more useful and move it elsewhere if you'd like.
 7. Once Plex Playlist Updater has finished running, the pop-up window will close automatically.
