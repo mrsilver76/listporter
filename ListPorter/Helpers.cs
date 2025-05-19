@@ -2,9 +2,9 @@
 using IniParser;
 using IniParser.Model;
 using System.Text.RegularExpressions;
-using static Plex_Playlist_Uploader.Program;
+using static ListPorter.Program;
 
-namespace Plex_Playlist_Uploader
+namespace ListPorter
 {
     public static class Helpers
     {
@@ -16,8 +16,6 @@ namespace Plex_Playlist_Uploader
         {
             if (args.Length == 0)
                 DisplayUsage();
-
-            Logger($"Parsing arguments: {string.Join(" ", args)}", true);
 
             // Loop through all arguments
             for (int i = 0; i < args.Length; i++)
@@ -118,13 +116,12 @@ namespace Plex_Playlist_Uploader
         {
             Version version = Assembly.GetExecutingAssembly().GetName().Version!;
 
-
             Console.WriteLine($"Usage: {System.AppDomain.CurrentDomain.FriendlyName} -s <address>[:<port>] -t <token> -l <library> -i <path> [options]\n" +
                                 "Upload standard or extended .m3u playlist files to Plex Media Server.\n");
 
 
             if (string.IsNullOrEmpty(errorMessage))
-                Console.WriteLine($"This is version v{version.Major}.{version.Minor}.{version.Revision}, copyright © 2024-{DateTime.Now.Year} Richard Lawrence.\n" +
+                Console.WriteLine($"This is version v{version.Major}.{version.Minor}.{version.Revision}, copyright © 2020-{DateTime.Now.Year} Richard Lawrence.\n" +
                                     "Music & multimedia icon by paonkz - Flaticon (https://www.flaticon.com/free-icons/music-and-multimedia)\n");
 
             Console.WriteLine("Mandatory arguments:\n" +
@@ -159,7 +156,7 @@ namespace Plex_Playlist_Uploader
         public static void InitialiseLogger()
         {
             // Set the path for the application data folder
-            appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Plex Playlist Uploader");
+            appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ListPorter");
 
             // Set the log folder path to be inside the application data folder
             string logFolderPath = Path.Combine(appDataPath, "Logs");
@@ -174,9 +171,30 @@ namespace Plex_Playlist_Uploader
                 DateTime lastModified = File.GetLastWriteTime(file);
                 if ((DateTime.Now - lastModified).TotalDays > 14)
                 {
-                    File.Delete(file);
+                    try
+                    {
+                        File.Delete(file);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger($"Error deleting log file {file}: {ex.Message}", true);
+                    }
                 }
             }
+
+            // Delete old "Plex Playlist Uploader" and "PlexPU" folders following name change. It's not worth keeping
+            // the old folders around, as they were only used for the first few versions of this app and the logs in
+            // them incorrectly expose the Plex token.
+            try
+            {
+                Directory.Delete(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Plex Playlist Uploader"));
+            }
+            catch { } // Ignore errors if the folder doesn't exist
+            try
+            {
+                Directory.Delete(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PlexPU"));
+            }
+            catch { } // Ignore errors if the folder doesn't exist
         }
 
         /// <summary>
@@ -214,7 +232,7 @@ namespace Plex_Playlist_Uploader
         /// </summary>
         public static void CheckLatestRelease()
         {
-            string gitHubRepo = "mrsilver76/plex-playlist-uploader";
+            string gitHubRepo = "mrsilver76/listporter";
             string iniPath = Path.Combine(appDataPath, "versionCheck.ini");
 
             var parser = new FileIniDataParser();
@@ -313,6 +331,16 @@ namespace Plex_Playlist_Uploader
             }
         }
 
-
+        /// <summary>
+        /// Pluralises a string based on the number provided.
+        /// </summary>
+        /// <param name="number"></param>
+        /// <param name="singular"></param>
+        /// <param name="plural"></param>
+        /// <returns></returns>
+        public static string Pluralise(int number, string singular, string plural)
+        {
+            return number == 1 ? $"{number} {singular}" : $"{number:N0} {plural}";
+        }
     }
 }
