@@ -45,7 +45,7 @@ Each release includes the following files (`x.x.x` denotes the version number):
 
 * Tested extensively: Windows 11
 * Tested moderately: Linux (ARM)
-* Not tested at all: Linux (x64), macOS (x64 & Apple Silicon)
+* Not tested at all: Windows 10, Linux (x64), macOS (x64 & Apple Silicon)
 
 ## 🚀 Quick start guide
 
