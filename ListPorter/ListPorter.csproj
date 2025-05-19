@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net8.0</TargetFramework>
+		<RootNamespace>ListPorter</RootNamespace>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+
+		<!-- Assembly information -->
+		<ApplicationIcon>ListPorter.ico</ApplicationIcon>
+		<Authors>Richard Lawrence</Authors>
+		<Product>Plex Playlist Uploader</Product>
+		<Description>EUpload standard or extended .m3u playlist files to Plex Media Server</Description>
+		<PackageProjectUrl>https://github.com/mrsilver76/listporter</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/mrsilver76/listporter</RepositoryUrl>
+		<Copyright>Copyright © 2020-2025 Richard Lawrence</Copyright>
+
+		<!-- Version information -->
+		<!-- Remember major.minor.BUILD.revision! -->
+		<Version>0.9.0.1</Version>
+		<AssemblyVersion>0.9.0.1</AssemblyVersion>
+		<FileVersion>0.9.0.1</FileVersion>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Content Include="ListPorter.ico" />
+		<PackageReference Include="ini-parser" Version="2.5.2" />
+	</ItemGroup>
+</Project>

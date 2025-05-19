@@ -4,11 +4,11 @@ using System.Linq;
 using System.Xml.Linq;
 using System.Net.Http;
 using System.Text;
-using static Plex_Playlist_Uploader.Helpers;
+using static ListPorter.Helpers;
 using System.Reflection;
 using System.Diagnostics.Contracts;
 
-namespace Plex_Playlist_Uploader
+namespace ListPorter
 {
     /// <summary>
     /// Class representing a Plex playlist with its ratingKey, title, and track count.
@@ -34,7 +34,7 @@ namespace Plex_Playlist_Uploader
         public static List<plexTrack> plexTrackList = new List<plexTrack>();
     }
 
-  
+
     class Program
     {
         // User preferences, changed through the command line
@@ -64,9 +64,13 @@ namespace Plex_Playlist_Uploader
         public static string appDataPath = ""; // Path to the app data folder
         public static HashSet<string> processedPlaylistTitles = new HashSet<string>(StringComparer.OrdinalIgnoreCase); // List of processed playlist titles
 
+        // Timer variable
+        private static DateTime? _trackFetchStartTime = null;
+        private static bool _statusMessageLogged = false;
+
         static void Main(string[] args)
         {
-            var version = Assembly.GetExecutingAssembly().GetName().Version!;
+            Version version = Assembly.GetExecutingAssembly().GetName().Version!;
             Console.OutputEncoding = System.Text.Encoding.UTF8;
 
             // Set up various paths and prepare logging
@@ -75,18 +79,22 @@ namespace Plex_Playlist_Uploader
             // Parse the arguments
             ParseArguments(args);
 
-            Console.WriteLine($"Plex Playlist Uploader v{version.Major}.{version.Minor}.{version.Revision}, Copyright © 2024-{DateTime.Now.Year} Richard Lawrence");
+            Console.WriteLine($"ListPorter v{version.Major}.{version.Minor}.{version.Revision}, Copyright © 2020-{DateTime.Now.Year} Richard Lawrence");
             Console.WriteLine($"Upload standard or extended .m3u playlist files to Plex Media Server.");
-            Console.WriteLine($"https://github.com/mrsilver76/plex-playlist-uploader\n");
+            Console.WriteLine($"https://github.com/mrsilver76/listporter\n");
             Console.WriteLine($"This program comes with ABSOLUTELY NO WARRANTY. This is free software,");
             Console.WriteLine($"and you are welcome to redistribute it under certain conditions; see");
             Console.WriteLine($"the documentation for details.");
             Console.WriteLine();
 
-            Logger($"Starting Plex Playlist Uploader...");
+            Logger($"Starting ListPorter...");
+
+            // Don't call any earlier, otherwise plexToken and machineIdentifier will be in the logs
+            Logger($"Parsed arguments: {string.Join(" ", args)}", true);
 
             // Check connectivity
-            CheckPlexConnectivity();
+            if (CheckPlexConnectivity() == false)
+                System.Environment.Exit(1);
 
             // Fetch and store all tracks from the Plex library
             FetchAndStoreTracks();
@@ -95,9 +103,9 @@ namespace Plex_Playlist_Uploader
 
             // We're going to display a status update here because if we put this inside the method then
             // it will be called multiple times and we don't want to see the same message over and over again
-            Logger($"Fetching playlists from Plex.");
+            Logger($"Fetching playlists from Plex...");
             FetchAndStorePlaylists();
-            Logger($"Found {plexPlaylist.plexPlaylistList.Count} playlists matching criteria in library ID {plexLibrary}.");
+            Logger($"Found {Pluralise(plexPlaylist.plexPlaylistList.Count, "playlist", "playlists")} matching criteria in library ID {plexLibrary}.");
 
             // Find M3U/M3U8 files to import from the specified directory
             FindM3UToImport(pathToImport);
@@ -115,7 +123,7 @@ namespace Plex_Playlist_Uploader
                 MirrorPlaylists();
 
             // Finished
-            Logger($"Plex Playlist Uploader finished.");
+            Logger($"ListPorter finished.");
             CheckLatestRelease();
             System.Environment.Exit(0);
         }
@@ -134,37 +142,64 @@ namespace Plex_Playlist_Uploader
             string responseContent = GetHttpResponse(HttpMethod.Get, urlPath);
             int count = 0;
 
-            // Parse the XML response
             var playlists = XElement.Parse(responseContent)
                                     .Elements("Playlist")
                                     .Where(x => x.Attribute("smart")?.Value == "0" && x.Attribute("playlistType")?.Value == "audio");
 
             foreach (var playlist in playlists)
             {
-                string? ratingKeyValue = playlist.Attribute("ratingKey")?.Value;
+                string? ratingKeyStr = playlist.Attribute("ratingKey")?.Value;
+                string? title = playlist.Attribute("title")?.Value;
+                string? leafCountStr = playlist.Attribute("leafCount")?.Value;
 
-                // Ensure the playlist has a ratingKey and all its content is in the current library
-                if (!string.IsNullOrEmpty(ratingKeyValue) &&
-                    IsAllPlaylistContentInThisLibrary(long.Parse(ratingKeyValue)))
+                // Try parse numeric fields
+                _ = long.TryParse(ratingKeyStr, out long ratingKey);
+                _ = long.TryParse(leafCountStr, out long trackCount);
+
+                // Validation logic
+                if (ratingKey <= 0)
                 {
-                    Logger($"Found playlist: {playlist.Attribute("title")?.Value}", true);
-                    plexPlaylist.plexPlaylistList.Add(new plexPlaylist
-                    {
-                        ratingKey = long.Parse(ratingKeyValue),
-                        playlistTitle = playlist.Attribute("title")?.Value ?? "Unknown",
-                        trackCount = long.Parse(playlist.Attribute("leafCount")?.Value ?? "0")
-                    });
-                    count++;
+                    Logger($"Skipping playlist (invalid ratingKey): title='{title ?? "Unknown"}', ratingKey='{ratingKeyStr ?? "null"}', trackCount='{leafCountStr ?? "null"}'", true);
+                    continue;
                 }
+
+                if (string.IsNullOrEmpty(title))
+                {
+                    Logger($"Skipping playlist (missing title): ratingKey='{ratingKey}', trackCount='{leafCountStr ?? "null"}'", true);
+                    continue;
+                }
+
+                if (trackCount <= 0)
+                {
+                    Logger($"Skipping playlist (no tracks): title='{title}', ratingKey='{ratingKey}', trackCount='{leafCountStr ?? "null"}'", true);
+                    continue;
+                }
+
+                // Library check
+                if (!IsAllPlaylistContentInThisLibrary(ratingKey))
+                {
+                    Logger($"Skipping playlist (contains tracks from other libraries): title='{title}', ratingKey='{ratingKey}'", true);
+                    continue;
+                }
+
+                // If valid, add to list
+                Logger($"Found playlist: {title}", true);
+                plexPlaylist.plexPlaylistList.Add(new plexPlaylist
+                {
+                    ratingKey = ratingKey,
+                    playlistTitle = title,
+                    trackCount = trackCount
+                });
+                count++;
             }
-            Logger($"Found {count} playlists on Plex.", true);
+
+            Logger($"Found {Pluralise(count, "playlist", "playlists")} on Plex.", true);
         }
 
         /// <summary>
         /// Fetches all tracks from the specified Plex library and stores their details 
         /// (ratingKey and file path) in the static list `plexTrack.plexTrackList`.
         /// </summary>
-
         public static void FetchAndStoreTracks()
         {
             Logger("Searching for audio tracks on Plex. This may take a while...");
@@ -172,7 +207,7 @@ namespace Plex_Playlist_Uploader
             string urlPath = $"/library/sections/{plexLibrary}/all";
             FetchAndStoreTracksRecursive(urlPath);
 
-            Logger($"Found {plexTrack.plexTrackList.Count} audio tracks on Plex.");
+            Logger($"Found {Pluralise(plexTrack.plexTrackList.Count, "audio track", "audio tracks")} on Plex.");
         }
 
         /// <summary>
@@ -183,20 +218,48 @@ namespace Plex_Playlist_Uploader
 
         private static void FetchAndStoreTracksRecursive(string urlPath)
         {
+            // Initialize start time on first call
+            if (_trackFetchStartTime == null)
+                _trackFetchStartTime = DateTime.UtcNow;
+
+            // Log status message once after 10 seconds
+            if (!_statusMessageLogged && (DateTime.UtcNow - _trackFetchStartTime.Value).TotalSeconds >= 10)
+            {
+                Logger($"Update after 10 seconds: {Pluralise(plexTrack.plexTrackList.Count, "track", "tracks")} found. Still working...");
+                _statusMessageLogged = true;
+            }
+
             string responseContent = GetHttpResponse(HttpMethod.Get, urlPath);
             var elements = XElement.Parse(responseContent);
 
             foreach (var track in elements.Elements("Track"))
             {
                 var media = track.Element("Media")?.Element("Part");
-                if (media != null && media.Attribute("deletedAt") == null)
+                string? filePath = media?.Attribute("file")?.Value;
+                string? ratingKeyStr = track.Attribute("ratingKey")?.Value;
+
+                bool isDeleted = media?.Attribute("deletedAt") != null;
+
+                if (string.IsNullOrEmpty(ratingKeyStr) || !long.TryParse(ratingKeyStr, out long ratingKey) || ratingKey <= 0)
                 {
-                    plexTrack.plexTrackList.Add(new plexTrack
-                    {
-                        ratingKey = long.Parse(track.Attribute("ratingKey")?.Value ?? "0"),
-                        filePath = media.Attribute("file")?.Value ?? "Unknown"
-                    });
+                    Logger($"Track skipped: missing/invalid ratingKey for: {filePath ?? "[unknown path]"}");
+                    continue;
                 }
+
+                if (string.IsNullOrEmpty(filePath))
+                {
+                    Logger($"Track skipped: missing file path for ratingKey {ratingKey}.");
+                    continue;
+                }
+
+                if (isDeleted)
+                    Logger($"{filePath} (ratingKey: {ratingKey}) marked as deleted, adding anyway. ", true);
+
+                plexTrack.plexTrackList.Add(new plexTrack
+                {
+                    ratingKey = ratingKey,
+                    filePath = filePath
+                });
             }
 
             foreach (var directory in elements.Elements("Directory"))
@@ -206,6 +269,7 @@ namespace Plex_Playlist_Uploader
                     FetchAndStoreTracksRecursive(childKey);
             }
         }
+
 
         /// <summary>
         /// Sends an HTTP request to the Plex API and returns the response as a string.
@@ -250,8 +314,8 @@ namespace Plex_Playlist_Uploader
                 }
                 catch (HttpRequestException ex)
                 {
-                    Logger($"Error with request: {ex.Message}");
-                    throw new Exception($"Error: {ex.Message}");
+                    string fullMessage = GetFullExceptionMessage(ex);
+                    throw new Exception($"Error with request: {fullMessage}");
                 }
             }
         }
@@ -323,16 +387,27 @@ namespace Plex_Playlist_Uploader
                 Logger($"Missing #PLAYLIST, assuming title: {importedPlaylistTitle}", true);
             }
 
-            if (added == 0)
+            if (added == 0 && failed == 0)
             {
-                Logger($"WARNING: no items in playlist can be added to Plex.");
+                Logger($"Warning: '{importedPlaylistTitle}' is empty!");
                 return false;
             }
 
-            if (failed > 0)
-                Logger($"WARNING: {failed} items could not be matched to Plex database.");
+            if (added == 0 && failed > 0)
+            {
+                Logger($"Warning: All {Pluralise(failed, "item", "items")} in '{importedPlaylistTitle}' failed to match Plex database!");
+                return false;
+            }
 
-            Logger($"Matched {added} items in playlist: {importedPlaylistTitle}", true);
+            if (added > 0 && failed == 0)
+            {
+                Logger($"All {Pluralise(added, "item", "items")} in '{importedPlaylistTitle}' matched to Plex database.", true);
+                return true;
+            }
+
+            // If we get here, we have a mix of added and failed items
+            Logger($"Warning: {Pluralise(failed, "item", "items")} could not be matched to Plex database!");
+            Logger($"Only {Pluralise(added, "item", "items")} will be added to '{importedPlaylistTitle}'");
             return true;
         }
 
@@ -426,7 +501,7 @@ namespace Plex_Playlist_Uploader
             }
 
             SendTrackBatchesToPlex(ratingKey, trackRatingKeys);
-            Logger($"Added {trackRatingKeys.Count} tracks to playlist.", true);
+            Logger($"Added {Pluralise(trackRatingKeys.Count, "track", "tracks")} to playlist.", true);
         }
 
         /// <summary>
@@ -465,7 +540,7 @@ namespace Plex_Playlist_Uploader
             }
 
             // Log the number of requests made (log to text file only)
-            Logger($"Sent {requests} HTTP requests to Plex to add tracks to playlist.", true);
+            Logger($"Sent {Pluralise(requests, "HTTP request", "HTTP requests")} to Plex to add tracks to playlist.", true);
         }
 
         /// <summary>
@@ -499,10 +574,7 @@ namespace Plex_Playlist_Uploader
 
                 // If librarySectionID is missing or doesn't match the current library, return false
                 if (string.IsNullOrEmpty(librarySectionID) || librarySectionID != plexLibrary.ToString())
-                {
-                    Logger($"Ignoring playlist '{playlistRatingKey}' because it contains tracks from a different library (ID: {librarySectionID})", true);
                     return false;
-                }
             }
 
             // All tracks belong to the current library
@@ -622,7 +694,7 @@ namespace Plex_Playlist_Uploader
             }
 
             // Step 4: Update the playlist content on Plex
-            Logger($"Adding {importedPlaylist.Count} items to playlist: {importedPlaylistTitle}");
+            Logger($"Adding {Pluralise(importedPlaylist.Count, "item", "items")} to playlist: {importedPlaylistTitle}");
             AddTracksToPlaylist(ratingKey);
             processedPlaylistTitles.Add(importedPlaylistTitle); // Add to processed list
 
@@ -729,11 +801,17 @@ namespace Plex_Playlist_Uploader
                 // Determine the likely issue based on the exception
                 if (ex.Message.Contains("401") || ex.Message.Contains("Unauthorized"))
                 {
-                    Logger("Possible cause: Invalid Plex Token.");
+                    Logger("Possible cause: The Plex token provided is not valid.");
+                    Logger("More info: https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/");
                 }
                 else if (ex.Message.Contains("404") || ex.Message.Contains("Not Found"))
                 {
-                    Logger("Possible cause: Incorrect Plex server URL or port.");
+                    Logger("Possible cause: The Plex server URL and/or port number is incorrect.");
+                }
+                else if (ex.Message.Contains("forcibly closed by the remote host"))
+                {
+                    Logger("Possible cause: Plex is set to require secure connections, change to \"prefer\" instead.");
+                    Logger("More info: https://support.plex.tv/articles/200430283-network/");
                 }
                 else
                 {
@@ -742,6 +820,28 @@ namespace Plex_Playlist_Uploader
                 return false;
             }
         }
+
+        /// <summary>
+        /// Given an exception, this method will return a string containing the full message of the exception
+        /// </summary>
+        /// <param name="ex"></param>
+        /// <returns></returns>
+        public static string GetFullExceptionMessage(Exception ex)
+        {
+            var messages = new List<string>();
+            var seen = new HashSet<string>();
+
+            while (ex != null)
+            {
+                if (!string.IsNullOrWhiteSpace(ex.Message) && seen.Add(ex.Message))
+                    messages.Add(ex.Message);
+
+                ex = ex.InnerException!;
+            }
+
+            return string.Join(" | ", messages);
+        }
+
 
         /// <summary>
         /// Deletes all items in a Plex playlist without deleting the playlist itself.
@@ -784,7 +884,7 @@ namespace Plex_Playlist_Uploader
             finally
             {
                 Logger($"Deleted playlist with ratingKey {ratingKey} from Plex.", true);
-            }   
+            }
         }
     }
 }

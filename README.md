@@ -1,5 +1,5 @@
-# Plex Playlist Uploader (PlexPU)
-_A cross-platform command-line tool (Windows, Linux, macOS) for uploading standard or extended `.m3u` audio playlists to Plex Media Server. Supports path rewriting, selective updates and optional mirroring of playlists._
+# ListPorter
+_A cross-platform command-line tool (Windows, Linux, macOS) for importing standard or extended `.m3u` audio playlists to Plex Media Server. Supports path rewriting, selective updates and optional mirroring of playlists._
 
 > [!TIP]
 > Using iTunes on Windows? [TuneLift](https://github.com/mrsilver76/tunelift) makes it easy to export your iTunes playlists to `.m3u` files.
@@ -7,28 +7,29 @@ _A cross-platform command-line tool (Windows, Linux, macOS) for uploading standa
 
 ## 🧰 Features
 * 💻 Runs on Windows, Linux (x64 & ARM) and macOS.
-* 📂 Uploads standard or extended M3U audio playlists to Plex.
+* 📂 Imports standard or extended M3U audio playlists to Plex.
 * 🌐 Works with any Plex server platform (Windows, Linux, NAS, macOS) via the Plex API.
-* ✅ Skips uploading playlists that haven’t changed.
-* 🪞 Mirrors Plex playlists to match uploaded M3U files (optional)
+* ✅ Skips importing playlists that haven’t changed.
+* 🪞 Mirrors Plex playlists to match imported M3U files (optional)
 * 🔁 Force playlist paths to use `/` or `\` to match your Plex server’s file path format (Linux, macOS, NAS, or Windows).
 * 🛠️ Modify playlist file paths using find & replace rules, ensuring they align with how Plex sees your media library.
-* 🧹 Deletes all Plex playlists before upload (optional)
+* 🧹 Deletes all Plex playlists before import (optional)
 * 🔗 Preserves playlist IDs to maintain compatibility with external players (e.g. Sonos)
 * 📘 Logs activity to timestamped text files
 
 ## 📦 Download
 
-Get the latest version from https://github.com/mrsilver76/plex-playlist-uploader/releases.
+Get the latest version from https://github.com/mrsilver76/listporter/releases.
 
 Each release includes the following files (`x.x.x` denotes the version number):
 
 |Filename|Description|
 |:--------|:-----------|
-|`PlexPU-x.x.x-win-x64.exe`|✅ For Microsoft Windows 10 and 11 ⬅️ **Most users should choose this**
-|`PlexPU-x.x.x-linux-x64`|For Linux on Intel/AMD CPUs|
-|`PlexPU-x.x.x-linux-arm64`|For Linux on ARM (e.g. Raspberry Pi)|
-|`PlexPU-x.x.x-osx-arm64`|For macOS on Apple Silicon (eg. M1 and newer)|
+|`ListPorter-x.x.x-win-x64.exe`|✅ For Microsoft Windows 10 and 11 ⬅️ **Most users should choose this**
+|`ListPorter-x.x.x-linux-x64`|For Linux on Intel/AMD CPUs|
+|`ListPorter-x.x.x-linux-arm64`|For Linux on ARM (e.g. Raspberry Pi)|
+|`ListPorter-x.x.x-osx-arm64`|For macOS on Apple Silicon (eg. M1 and newer)|
+|`ListPorter-x.x.x-osx-x64`|For macOS on Intel-based Macs (pre-Apple Silicon)|
 |Source code (zip)|ZIP archive of the source code|
 |Source code (tar.gz)|TAR.GZ archive of the source code|
 
@@ -38,7 +39,7 @@ Each release includes the following files (`x.x.x` denotes the version number):
 ### Linux/macOS users
 
 * You will need to install the [.NET 8.0 runtime](https://dotnet.microsoft.com/en-us/download/dotnet/8.0/runtime).
-* Don't forget to make the file executable: `chmod +x PlexPU-x.x.x-<your-platform>`
+* Don't forget to make the file executable: `chmod +x ListPorter-x.x.x-<your-platform>`
 
 ### Platform testing notes
 
@@ -48,39 +49,39 @@ Each release includes the following files (`x.x.x` denotes the version number):
 
 ## 🚀 Quick start guide
 
-Below are a couple of command scenarios for using Plex Playlist Uploader. They will work on all platforms.
+Below are a couple of command scenarios for using ListPorter. They will work on all platforms.
 
 ```
-PlexPU -s 127.0.0.1 -t ABCDEFG -l 8 -i "C:\Playlists" -m
+ListPorter -s 127.0.0.1 -t ABCDEFG -l 8 -i "C:\Playlists" -m
 
-PlexPU --server 127.0.0.1 --token ABCDEFG --library 8 --import "C:\Playlists" --mirror
+ListPorter --server 127.0.0.1 --token ABCDEFG --library 8 --import "C:\Playlists" --mirror
 ```
 * Connect to the Plex server running on the same machine
 * Use Plex token `ABDEFGH`
 * Use music library ID `8`
-* Upload all playlists in `C:\Playlists\`
-* Remove any playlists from Plex that aren't uploaded (mirror)
+* Import all playlists in `C:\Playlists\`
+* Remove any playlists from Plex that aren't imported (mirror)
   
 ```
-PlexPU -s 192.168.1.100 -t ABCDEFG -l 4 -I "/home/mrsilver/playlists/Running.m3u" -w
+ListPorter -s 192.168.1.100 -t ABCDEFG -l 4 -I "/home/mrsilver/playlists/Running.m3u" -w
 
-PlexPU --server 192.168.1.100 --token ABCDEFG --library 4 --import "/home/mrsilver/playlists/running.m3u" --windows
+ListPorter --server 192.168.1.100 --token ABCDEFG --library 4 --import "/home/mrsilver/playlists/running.m3u" --windows
 ```
 * Connect to Plex Server running at `192.168.1.100`
 * Use Plex token `ABCDEFG`
 * Use music library ID `4`
-* Upload all playlists in `/home/mrsilver/playlists/`
+* Import all playlists in `/home/mrsilver/playlists/`
 * Replace Linux forward slashes (`/`) in the playlist path to Windows backslashes (`\`)
 
 ```
-PlexPU -s pimachine -t ABCDEFG -l 10 -i "C:\Playlists" -l -f "C:/Users/MrSilver/Music/iTunes/iTunes Media/Music" -r "/home/pi/music" -d
+ListPorter -s pimachine -t ABCDEFG -l 10 -i "C:\Playlists" -l -f "C:/Users/MrSilver/Music/iTunes/iTunes Media/Music" -r "/home/pi/music" -d
 
-PlexPU --server pimachine --token ABCDEFG --library 10 --import "C:\Playlists" --linux --find "C:/Users/MrSilver/Music/iTunes/iTunes Media/Music" --replace "/home/pi/music" --delete
+ListPorter --server pimachine --token ABCDEFG --library 10 --import "C:\Playlists" --linux --find "C:/Users/MrSilver/Music/iTunes/iTunes Media/Music" --replace "/home/pi/music" --delete
 ```
 * Connect to Plex Server running at `pimachine`
 * Use Plex token `ABCDEFG`
 * Use music library ID `10`
-* Upload all playlists found in `C:\Playlists`
+* Import all playlists found in `C:\Playlists`
 * Replace Windows backslashes (`\`) in the playlist path to forward slashes (`/`)
 * Replace `C:\Users\MrSilver\Music\iTunes\iTunes Media\Music` in the playlist paths to `/home/pi/music`
 * Delete all playlists on Plex first before importing
@@ -91,7 +92,7 @@ PlexPU --server pimachine --token ABCDEFG --library 10 --import "C:\Playlists" -
 ## 💻 Command line options
 
 ```
-PlexPU -s <address>[:<port>] -t <token> -l <library> -i <path> [options]
+ListPorter -s <address>[:<port>] -t <token> -l <library> -i <path> [options]
 ```
 
 ### Mandatory arguments
@@ -116,16 +117,16 @@ PlexPU -s <address>[:<port>] -t <token> -l <library> -i <path> [options]
 #### Playlist sync options
 
 - **`-d`, `--delete`**   
-  Deletes all existing playlists in the specified Plex music library before uploading any new ones. Only audio playlists that are manual and entirely within the specified library are affected.
+  Deletes all existing playlists in the specified Plex music library before importing any new ones. Only audio playlists that are manual and entirely within the specified library are affected.
 
 - **`-m`, `--mirror`**   
-  Mirrors Plex playlists to match the uploaded `.m3u` files. Any Plex playlists not represented in the imported list will be removed. Only audio playlists that are manual and entirely within the specified library are affected.
+  Mirrors Plex playlists to match the imported `.m3u` files. Any Plex playlists not represented in the imported list will be removed. Only audio playlists that are manual and entirely within the specified library are affected.
 
 #### Path rewriting options
 
 If your `.m3u` playlists reference song locations that Plex can’t access (e.g. local drives or mismatched paths), those tracks won’t be playable. For instance, a playlist might use a local path like `D:\MyMusic`, while your Plex server expects a network path like `\\homepc\MyMusic` or `/mnt/music`.
 
-These options let you adjust how file paths are interpreted during upload, so they match the structure expected by your Plex server. The playlist files themselves are not changed.
+These options let you adjust how file paths are interpreted during import, so they match the structure expected by your Plex server. The playlist files themselves are not changed.
 
 - **`-u`, `--unix`**   
 Force playlist paths to use forward slashes (`/`), often required for Plex servers running on Linux, macOS, or NAS.
@@ -166,7 +167,7 @@ These rules apply to all playlist-related operations, including `--mirror` and `
 
 The program outputs a more detailed set of logs than displayed on the screen. These can be helpful when trying to debug so, if you raise an issue, please be prepared to share them. 
 
-You can find out where the logs are located by reading the output of `PlexPU -h`. There is a hidden command line argument `-v` or `--verbose` which will also log the API calls made to the Plex server. Logs older than 14 days are deleted every time the program runs.
+You can find out where the logs are located by reading the output of `ListPorter -h`. There is a hidden command line argument `-v` or `--verbose` which will also log the API calls made to the Plex server. Logs older than 14 days are deleted every time the program runs.
 
 >[!NOTE]
 >All log files generated by the program automatically censor the Plex token and Machine ID.
@@ -177,12 +178,12 @@ The programs expects a number of command lines argument to run, so double-clicki
 
 However you can enable this with a couple of steps:
 
-1. Place `PlexPU.exe` wherever you would like to store it.
-2. Right-click on `PlexPU.exe`, select "Show more options" and then "Create shortcut".
-3. Right-click on the newly created `PlexPU.exe - Shortcut` and select "Properties"
+1. Place `ListPorter.exe` wherever you would like to store it.
+2. Right-click on `ListPorter.exe`, select "Show more options" and then "Create shortcut".
+3. Right-click on the newly created `ListPorter.exe - Shortcut` and select "Properties"
 4. In the text box labelled "Target" add the arguments you want to use to the end of the string. Full details of all the arguments are documented [here](#command-line-options).
 5. Click on "OK"
-6. To run, double-click on `PlexPU.exe - Shortcut`. You can rename this to something more useful and move it elsewhere if you'd like.
+6. To run, double-click on `ListPorter.exe - Shortcut`. You can rename this to something more useful and move it elsewhere if you'd like.
 7. Once Plex Playlist Updater has finished running, the pop-up window will close automatically.
 
 ### Can I run this on a headless Linux server or NAS?
@@ -195,7 +196,7 @@ When enabled, `--mirror` will remove any Plex playlists that are not represented
 > Be careful when using `--mirror` with a single file: this will cause all other playlists in the library to be removed, keeping only the one you provided.
 
 ### Does this overwrite existing playlists in Plex?
-Only if their content has changed. The tool compares the track list in your M3U file with the existing Plex playlist. If they differ, it clears the Plex playlist and re-uploads the correct tracks. If they are identical, it skips the update.
+Only if their content has changed. The tool compares the track list in your M3U file with the existing Plex playlist. If they differ, it clears the Plex playlist and re-imports the correct tracks. If they are identical, it skips the update.
 
 ### How do I handle mismatched paths between the source and Plex server?
 You can use the `--find` and `--replace` options to rewrite the file paths in your playlist to match what Plex expects. For example, if your M3U uses `D:\Music` and Plex expects `\\server\Music`, use `--find "D:\Music" --replace "\\server\Music"`
@@ -234,7 +235,7 @@ Some external apps and hardware players (such as Sonos) reference Plex playlists
 
 ## 🛟 Questions/problems?
 
-Please raise an issue at https://github.com/mrsilver76/plex-playlist-uploader/issues.
+Please raise an issue at https://github.com/mrsilver76/listporter/issues.
 
 ## 📝 Attribution
 
@@ -244,11 +245,26 @@ Please raise an issue at https://github.com/mrsilver76/plex-playlist-uploader/is
 
 ## 🕰️ Version history
 
+### 0.9.1 (19 May 2025)
+- Renamed to "ListPorter" to avoid any potential issue with the Plex legal team.
+- Fixed bug that meant that the Plex token and machine ID could end up in the logs.
+- Log folders generated by 0.9.0 are removed, as they can contain token data.
+- Tracks marked as deleted (but not removed) are now considered for playlists.
+- Fixed logs to report more useful information.
+- Fixed copyright and minor number formatting.
+- Added error catching for some file operations.
+- Changed incorrect scary messaging when there are empty playlists.
+- Fixed terrible error messages when unable to connect to Plex server.
+- Added links to Plex support articles for common connection issues.
+- Added 10 second notification to avoid people thinking that the program had locked up.
+- Updated Publish.bat to include missing builds for osx-x64
+
 ### 0.9.0 (16 May 2025)
 - Initial release, a C# port from "iTunes Playlist Exporter".
 - Now cross-platform, with support for Windows, Linux (x64 and ARM) and macOS.
 - Removed iTunes exporting functionality, now handled by a separate tool called [TuneLift](https://github.com/mrsilver76/tunelift).
 - Added automatic version checking with update notifications.
-- Playlists are only updated if they have changed, eliminating the need to delete and re-upload everything.
+- Playlists are only updated if they have changed, eliminating the need to delete and re-import everything.
 - Added `--mirror` option to remove playlists from Plex that no longer exist in the input directory.
 - Modified playlists retain their original playlist ID, so external players like Sonos can continue to reference them.
+
