@@ -100,6 +100,10 @@ ListPorter -s <address>[:<port>] -t <token> -l <library> -i <path> [options]
 - **`-s <address>[:<port>]`, `--server <address>[:<port>]`**   
   Plex server address, optionally including the port (e.g. `localhost:32400`). If you do not supply a port then the default (`32400`) will be used.
 
+>[!WARNING]
+>This tool does not currently support Plex servers set to require secure connections. To use it, change Plex’s Secure Connections setting to "Preferred" under **Settings > Network > Secure Connections**.
+
+
 - **`-t <token>`, `--token <token>`**   
   Plex authentication token. Required to interact with your Plex server. To find out your token, see the [Plex support article](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/).
 
