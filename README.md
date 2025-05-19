@@ -6,7 +6,7 @@ _A cross-platform command-line tool (Windows, Linux, macOS) for importing standa
 
 
 ## 🧰 Features
-* 💻 Runs on Windows, Linux (x64 & ARM) and macOS.
+* 💻 Runs on Windows, Linux (x64 & ARM) and macOS (Intel & Apple Silicon).
 * 📂 Imports standard or extended M3U audio playlists to Plex.
 * 🌐 Works with any Plex server platform (Windows, Linux, NAS, macOS) via the Plex API.
 * ✅ Skips importing playlists that haven’t changed.
