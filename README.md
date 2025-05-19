@@ -257,10 +257,10 @@ Please raise an issue at https://github.com/mrsilver76/listporter/issues.
 - Fixed terrible error messages when unable to connect to Plex server.
 - Added links to Plex support articles for common connection issues.
 - Added 10 second notification to avoid people thinking that the program had locked up.
-- Updated Publish.bat to include missing builds for osx-x64
+- Updated `Publish.bat` to include missing osx-x64 (macOS on Intel) build.
 
 ### 0.9.0 (16 May 2025)
-- Initial release, a C# port from "iTunes Playlist Exporter".
+- Initial release, a C# port from [iTunes Playlist Exporter](https://github.com/mrsilver76/itunes_playlist_exporter).
 - Now cross-platform, with support for Windows, Linux (x64 and ARM) and macOS.
 - Removed iTunes exporting functionality, now handled by a separate tool called [TuneLift](https://github.com/mrsilver76/tunelift).
 - Added automatic version checking with update notifications.
