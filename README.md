@@ -187,7 +187,7 @@ However you can enable this with a couple of steps:
 7. Once Plex Playlist Updater has finished running, the pop-up window will close automatically.
 
 ### Can I run this on a headless Linux server or NAS?
-Yes. The tool is a command-line application and can be run from a headless environment like a Linux server or NAS, provided the .NET 8.0 runtime is installed and the binary has execute permissions.
+Yes. The tool is a command-line application and can be run from a headless environment like a Linux server or NAS, provided the [.NET 8.0 runtime](https://dotnet.microsoft.com/en-us/download/dotnet/8.0/runtime) is installed and the binary has execute permissions.
 
 ### What does the `--mirror` option do exactly?
 When enabled, `--mirror` will remove any Plex playlists that are not represented in the M3U files you're importing. This allows you to keep your Plex playlists in sync with an external source, such as a local music manager or export directory. Mirroring is one-way only, you cannot use this tool to export changes you've made to your playlists in Plex.
