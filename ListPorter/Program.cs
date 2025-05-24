@@ -73,7 +73,7 @@ namespace ListPorter
             // Parse the arguments
             ParseArguments(args);
 
-            Console.WriteLine($"ListPorter v{OutputVersion()}, Copyright © 2020-{DateTime.Now.Year} Richard Lawrence");
+            Console.WriteLine($"ListPorter v{OutputVersion(version)}, Copyright © 2020-{DateTime.Now.Year} Richard Lawrence");
             Console.WriteLine($"Upload standard or extended .m3u playlist files to Plex Media Server.");
             Console.WriteLine($"https://github.com/mrsilver76/listporter\n");
             Console.WriteLine($"This program comes with ABSOLUTELY NO WARRANTY. This is free software,");

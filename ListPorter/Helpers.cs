@@ -119,7 +119,7 @@ namespace ListPorter
 
 
             if (string.IsNullOrEmpty(errorMessage))
-                Console.WriteLine($"This is version {OutputVersion()}, copyright © 2020-{DateTime.Now.Year} Richard Lawrence.\n" +
+                Console.WriteLine($"This is version {OutputVersion(version)}, copyright © 2020-{DateTime.Now.Year} Richard Lawrence.\n" +
                                     "Music & multimedia icon by paonkz - Flaticon (https://www.flaticon.com/free-icons/music-and-multimedia)\n");
 
             Console.WriteLine("Mandatory arguments:\n" +
@@ -249,7 +249,7 @@ namespace ListPorter
                     if (!string.IsNullOrEmpty(latest.Value.Version))
                     {
                         ini["Version"]["LatestReleaseVersion"] = latest.Value.Version;
-                        cachedVersion = Version.Parse(latest.Value.Version);
+                        cachedVersion = ParseSemanticVersion(latest.Value.Version);
                     }
 
                     parser.WriteFile(iniPath, ini); // Always write if we got any response at all
@@ -260,11 +260,43 @@ namespace ListPorter
             {
                 Console.WriteLine();
                 Console.ForegroundColor = ConsoleColor.Cyan;
-                Console.Write(      $" ℹ️ A new version ({cachedVersion}) is available!");
+                Console.Write(      $" ℹ️ A new version ({OutputVersion(cachedVersion)}) is available!");
                 Console.ResetColor();
-                Console.WriteLine($" You are using {OutputVersion()}");
+                Console.WriteLine($" You are using {OutputVersion(version)}");
                 Console.WriteLine(  $"    Get it from https://www.github.com/{gitHubRepo}/");
             }
+        }
+
+        /// <summary>
+        /// Takes a semantic version string in the format "major.minor.revision" and returns a Version object in
+        /// the format "major.minor.0.revision"
+        /// </summary>
+        /// <param name="versionString"></param>
+        /// <returns></returns>
+        public static Version? ParseSemanticVersion(string versionString)
+        {
+            if (string.IsNullOrWhiteSpace(versionString))
+                return null;
+
+            var parts = versionString.Split('.');
+            if (parts.Length != 3)
+                return null;
+
+            if (int.TryParse(parts[0], out int major) &&
+                int.TryParse(parts[1], out int minor) &&
+                int.TryParse(parts[2], out int revision))
+            {
+                try
+                {
+                    return new Version(major, minor, 0, revision);
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -283,8 +315,7 @@ namespace ListPorter
             bool hasTimestamp = DateTime.TryParse(dateStr, out DateTime lastChecked);
             bool isExpired = !hasTimestamp || (DateTime.UtcNow - lastChecked.ToUniversalTime()).TotalDays >= 7;
 
-            if (Version.TryParse(versionStr ?? "", out Version? parsed))
-                cachedVersion = parsed;
+            cachedVersion = ParseSemanticVersion(versionStr);
 
             return isExpired;
         }
@@ -299,7 +330,7 @@ namespace ListPorter
             string url = $"https://api.github.com/repos/{repo}/releases/latest";
             using var client = new HttpClient();
 
-            string ua = repo.Replace('/', '.') + "/" + OutputVersion();
+            string ua = repo.Replace('/', '.') + "/" + OutputVersion(version);
             client.DefaultRequestHeaders.UserAgent.ParseAdd(ua);
 
             try
@@ -343,24 +374,27 @@ namespace ListPorter
         }
 
         /// <summary>
-        /// Outputs the version in a semantic version format. If the build number is greater than 0,
-        /// it appends `-preX` to the version string.
+        /// Given a .NET Version object, outputs the version in a semantic version format.
+        /// If the build number is greater than 0, it appends `-preX` to the version string.
         /// </summary>
         /// <returns></returns>
-        public static string OutputVersion()
+        public static string OutputVersion(Version? netVersion)
         {
+            if (netVersion == null)
+                return "0.0.0";
+
             // Use major.minor.revision from version, defaulting patch to 0 if missing
-            int major = version.Major;
-            int minor = version.Minor;
-            int revision = version.Revision >= 0 ? version.Revision : 0;
+            int major = netVersion.Major;
+            int minor = netVersion.Minor;
+            int revision = netVersion.Revision >= 0 ? netVersion.Revision : 0;
 
             // Build the base semantic version string
             string result = $"{major}.{minor}.{revision}";
 
             // Append `-preX` if build is greater than 0
-            if (version.Build > 0)
+            if (netVersion.Build > 0)
             {
-                result += $"-pre{version.Build}";
+                result += $"-pre{netVersion.Build}";
             }
 
             return result;

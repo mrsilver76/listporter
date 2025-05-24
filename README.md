@@ -252,6 +252,9 @@ Please raise an issue at https://github.com/mrsilver76/listporter/issues.
 
 ## 🕰️ Version history
 
+### 0.9.3 (24 May 2025)
+- Fixed version checker incorrectly reporting updates available when already on the latest version.
+
 ### 0.9.2 (24 May 2025)
 - Updated track discovery to use a more comprehensive Plex API endpoint, resolving issues where some valid items (like orphaned tracks) were previously omitted. Thanks to u/AnalogWalrus and u/spikeygg for spotting and helping to debug.
 - Improved performance by over 30% through fewer API calls and reduced track lookups during playlist processing.
