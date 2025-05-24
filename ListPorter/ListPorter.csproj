@@ -9,7 +9,7 @@
 		<!-- Assembly information -->
 		<ApplicationIcon>ListPorter.ico</ApplicationIcon>
 		<Authors>Richard Lawrence</Authors>
-		<Product>Plex Playlist Uploader</Product>
+		<Product>ListPorter</Product>
 		<Description>Upload standard or extended .m3u playlist files to Plex Media Server</Description>
 		<PackageProjectUrl>https://github.com/mrsilver76/listporter</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/mrsilver76/listporter</RepositoryUrl>
