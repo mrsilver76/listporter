@@ -84,7 +84,7 @@ namespace ListPorter
                 else if (arg == "-w" || arg == "--windows")
                     pathStyle = PathStyle.ForceWindows;
                 else if (arg == "-v" || arg == "--verbose")
-                    logAPIrequests = true;
+                    verboseMode = true;
                 else if (arg[0] == '/' || arg[0] == '-')
                     DisplayUsage($"Unknown option: {arg}");
             }
@@ -114,14 +114,12 @@ namespace ListPorter
         /// <param name="errorMessage">Error message</param>
         public static void DisplayUsage(string errorMessage = "")
         {
-            Version version = Assembly.GetExecutingAssembly().GetName().Version!;
-
             Console.WriteLine($"Usage: {System.AppDomain.CurrentDomain.FriendlyName} -s <address>[:<port>] -t <token> -l <library> -i <path> [options]\n" +
                                 "Upload standard or extended .m3u playlist files to Plex Media Server.\n");
 
 
             if (string.IsNullOrEmpty(errorMessage))
-                Console.WriteLine($"This is version v{version.Major}.{version.Minor}.{version.Revision}, copyright © 2020-{DateTime.Now.Year} Richard Lawrence.\n" +
+                Console.WriteLine($"This is version {OutputVersion()}, copyright © 2020-{DateTime.Now.Year} Richard Lawrence.\n" +
                                     "Music & multimedia icon by paonkz - Flaticon (https://www.flaticon.com/free-icons/music-and-multimedia)\n");
 
             Console.WriteLine("Mandatory arguments:\n" +
@@ -139,6 +137,9 @@ namespace ListPorter
                                 "    -w, --windows                     Force backslashes in song paths, for Windows Plex servers.\n" +
                                 "    -f, --find <text>                 Find text within the song path.\n" +
                                 "    -r, --replace <text>              Replace found text in song path with <text>.\n" +
+                                "\n" +
+                                "  Other options:\n" +
+                                "    -v, --verbose                     Verbose output to log files.\n" +
                                 "\n" +
                                $"Logs are written to {Path.Combine(appDataPath, "Logs")}\n");
 
@@ -255,15 +256,14 @@ namespace ListPorter
                 }
             }
 
-            var localVersion = Assembly.GetExecutingAssembly().GetName().Version!;
-            if (cachedVersion != null && cachedVersion > localVersion)
+            if (cachedVersion != null && cachedVersion > version)
             {
                 Console.WriteLine();
                 Console.ForegroundColor = ConsoleColor.Cyan;
-                Console.Write($"   A new version ({cachedVersion}) is available!");
+                Console.Write(      $" ℹ️ A new version ({cachedVersion}) is available!");
                 Console.ResetColor();
-                Console.WriteLine($" You are using {localVersion.Major}.{localVersion.Minor}.{localVersion.Revision}");
-                Console.WriteLine($"    Get it from https://www.github.com/{gitHubRepo}/");
+                Console.WriteLine($" You are using {OutputVersion()}");
+                Console.WriteLine(  $"    Get it from https://www.github.com/{gitHubRepo}/");
             }
         }
 
@@ -299,8 +299,7 @@ namespace ListPorter
             string url = $"https://api.github.com/repos/{repo}/releases/latest";
             using var client = new HttpClient();
 
-            Version? localVersion = Assembly.GetExecutingAssembly().GetName().Version!;
-            string ua = repo.Replace('/', '.') + "/" + localVersion;
+            string ua = repo.Replace('/', '.') + "/" + OutputVersion();
             client.DefaultRequestHeaders.UserAgent.ParseAdd(ua);
 
             try
@@ -341,6 +340,30 @@ namespace ListPorter
         public static string Pluralise(int number, string singular, string plural)
         {
             return number == 1 ? $"{number} {singular}" : $"{number:N0} {plural}";
+        }
+
+        /// <summary>
+        /// Outputs the version in a semantic version format. If the build number is greater than 0,
+        /// it appends `-preX` to the version string.
+        /// </summary>
+        /// <returns></returns>
+        public static string OutputVersion()
+        {
+            // Use major.minor.revision from version, defaulting patch to 0 if missing
+            int major = version.Major;
+            int minor = version.Minor;
+            int revision = version.Revision >= 0 ? version.Revision : 0;
+
+            // Build the base semantic version string
+            string result = $"{major}.{minor}.{revision}";
+
+            // Append `-preX` if build is greater than 0
+            if (version.Build > 0)
+            {
+                result += $"-pre{version.Build}";
+            }
+
+            return result;
         }
     }
 }

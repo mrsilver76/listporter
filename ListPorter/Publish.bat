@@ -37,7 +37,7 @@ set "version=%major%.%minor%.%revision%"
 set /a buildCheck=%build% + 0
 
 if !buildCheck! gtr 0 (
-    set "version=%version%pre%build%"
+    set "version=%version%-pre%build%"
 )
 
 REM --- VERIFY VERSION EXTRACTION --
