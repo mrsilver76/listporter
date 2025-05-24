@@ -18,22 +18,18 @@ namespace ListPorter
         public long ratingKey { get; set; }
         public string playlistTitle { get; set; } = string.Empty;
         public long trackCount { get; set; }
-
-        public static List<plexPlaylist> plexPlaylistList = new List<plexPlaylist>();
     }
 
     /// <summary>
-    /// Class representing a Plex track with its ratingKey and file path. We will use this
-    /// to store every single song that we can find within the Plex Media Server.
+    /// Class representing an audio track with its ratingKey and file path. We will use this
+    /// in two ways (1) to store every single song stored in Plex, and (2) to store
+    /// the contents of a playlist that we are importing.
     /// </summary>
-    public class plexTrack
+    public class TrackInfo
     {
         public long ratingKey { get; set; }
         public string filePath { get; set; } = string.Empty;
-
-        public static List<plexTrack> plexTrackList = new List<plexTrack>();
     }
-
 
     class Program
     {
@@ -47,7 +43,7 @@ namespace ListPorter
         public static bool mirrorPlaylists = false; // Mirror playlists
         public static string findText = ""; // Text to find in file paths
         public static string replaceText = ""; // Text to replace in file paths
-        public static bool logAPIrequests = false; // Log API requests
+        public static bool verboseMode = false; // Output verbose messages (API calls and lookup results)
         public enum PathStyle
         {
             Auto, // Do nothing
@@ -58,19 +54,17 @@ namespace ListPorter
 
         // Internal globals
         public static List<string> M3UFilesToImport = new List<string>(); // List of m3u files to process
-        public static List<string> importedPlaylist = new List<string>(); // List of files in a playlist
         public static string importedPlaylistTitle = ""; // Name of the playlist we're importing
         public static string machineIdentifier = ""; // ID used to upload playlists
         public static string appDataPath = ""; // Path to the app data folder
         public static HashSet<string> processedPlaylistTitles = new HashSet<string>(StringComparer.OrdinalIgnoreCase); // List of processed playlist titles
-
-        // Timer variable
-        private static DateTime? _trackFetchStartTime = null;
-        private static bool _statusMessageLogged = false;
+        public static Version version = Assembly.GetExecutingAssembly().GetName().Version!;
+        public static List<TrackInfo> plexTrackList = new List<TrackInfo>(); // List of all audio tracks in the Plex library
+        public static List<TrackInfo> importedPlaylist = new List<TrackInfo>(); // List of tracks in the imported playlist
+        public static List<plexPlaylist> plexPlaylistList = new List<plexPlaylist>(); // List of playlists fetched from Plex
 
         static void Main(string[] args)
         {
-            Version version = Assembly.GetExecutingAssembly().GetName().Version!;
             Console.OutputEncoding = System.Text.Encoding.UTF8;
 
             // Set up various paths and prepare logging
@@ -79,7 +73,7 @@ namespace ListPorter
             // Parse the arguments
             ParseArguments(args);
 
-            Console.WriteLine($"ListPorter v{version.Major}.{version.Minor}.{version.Revision}, Copyright © 2020-{DateTime.Now.Year} Richard Lawrence");
+            Console.WriteLine($"ListPorter v{OutputVersion()}, Copyright © 2020-{DateTime.Now.Year} Richard Lawrence");
             Console.WriteLine($"Upload standard or extended .m3u playlist files to Plex Media Server.");
             Console.WriteLine($"https://github.com/mrsilver76/listporter\n");
             Console.WriteLine($"This program comes with ABSOLUTELY NO WARRANTY. This is free software,");
@@ -105,7 +99,7 @@ namespace ListPorter
             // it will be called multiple times and we don't want to see the same message over and over again
             Logger($"Fetching playlists from Plex...");
             FetchAndStorePlaylists();
-            Logger($"Found {Pluralise(plexPlaylist.plexPlaylistList.Count, "playlist", "playlists")} matching criteria in library ID {plexLibrary}.");
+            Logger($"Found {Pluralise(plexPlaylistList.Count, "playlist", "playlists")} matching criteria in library ID {plexLibrary}.");
 
             // Find M3U/M3U8 files to import from the specified directory
             FindM3UToImport(pathToImport);
@@ -136,7 +130,7 @@ namespace ListPorter
 
         public static void FetchAndStorePlaylists()
         {
-            plexPlaylist.plexPlaylistList.Clear();
+            plexPlaylistList.Clear();
 
             string urlPath = "/playlists";
             string responseContent = GetHttpResponse(HttpMethod.Get, urlPath);
@@ -184,7 +178,7 @@ namespace ListPorter
 
                 // If valid, add to list
                 Logger($"Found playlist: {title}", true);
-                plexPlaylist.plexPlaylistList.Add(new plexPlaylist
+                plexPlaylistList.Add(new plexPlaylist
                 {
                     ratingKey = ratingKey,
                     playlistTitle = title,
@@ -197,42 +191,43 @@ namespace ListPorter
         }
 
         /// <summary>
-        /// Fetches all tracks from the specified Plex library and stores their details 
-        /// (ratingKey and file path) in the static list `plexTrack.plexTrackList`.
+        /// Fetches all audio tracks stored in the specified Plex library section and stores their details
+        /// (ratingKey and file path) in the static list `TrackInfo.plexTrackList`.
         /// </summary>
         public static void FetchAndStoreTracks()
         {
             Logger("Searching for audio tracks on Plex. This may take a while...");
 
-            string urlPath = $"/library/sections/{plexLibrary}/all";
-            FetchAndStoreTracksRecursive(urlPath);
+            const int pageSize = 2000;
+            int start = 0;
 
-            Logger($"Found {Pluralise(plexTrack.plexTrackList.Count, "audio track", "audio tracks")} on Plex.");
+            while (true)
+            {
+                string urlPath = $"/library/sections/{plexLibrary}/all?type=10&X-Plex-Container-Start={start}&X-Plex-Container-Size={pageSize}";
+                var container = XElement.Parse(GetHttpResponse(HttpMethod.Get, urlPath));
+
+                ExtractTracksFromContainer(container);
+
+                // If there is no next page or we've gone beyond totalSize then break out
+                // of the loop
+                if (!int.TryParse(container.Attribute("size")?.Value, out int size) ||
+                    !int.TryParse(container.Attribute("totalSize")?.Value, out int totalSize) ||
+                    size == 0 || start + size >= totalSize)
+                    break;
+
+                start += size;
+            }
+
+            Logger($"Found {Pluralise(plexTrackList.Count, "audio track", "audio tracks")} on Plex.");
         }
 
         /// <summary>
-        /// Recursively fetches tracks and directories from the specified Plex library section 
-        /// and stores track details in `plexTrack.plexTrackList`.
+        /// Extracts audio tracks from a given XML container element and adds them to the static list `TrackInfo.plexTrackList`.
         /// </summary>
-        /// <param name="urlPath">The API endpoint path to fetch the library contents.</param>
-
-        private static void FetchAndStoreTracksRecursive(string urlPath)
+        /// <param name="container"></param>
+        private static void ExtractTracksFromContainer(XElement container)
         {
-            // Initialize start time on first call
-            if (_trackFetchStartTime == null)
-                _trackFetchStartTime = DateTime.UtcNow;
-
-            // Log status message once after 10 seconds
-            if (!_statusMessageLogged && (DateTime.UtcNow - _trackFetchStartTime.Value).TotalSeconds >= 10)
-            {
-                Logger($"Update after 10 seconds: {Pluralise(plexTrack.plexTrackList.Count, "track", "tracks")} found. Still working...");
-                _statusMessageLogged = true;
-            }
-
-            string responseContent = GetHttpResponse(HttpMethod.Get, urlPath);
-            var elements = XElement.Parse(responseContent);
-
-            foreach (var track in elements.Elements("Track"))
+            foreach (var track in container.Elements("Track"))
             {
                 var media = track.Element("Media")?.Element("Part");
                 string? filePath = media?.Attribute("file")?.Value;
@@ -253,23 +248,18 @@ namespace ListPorter
                 }
 
                 if (isDeleted)
-                    Logger($"{filePath} (ratingKey: {ratingKey}) marked as deleted, adding anyway. ", true);
+                    Logger($"{filePath} (ratingKey: {ratingKey}) marked as deleted, adding anyway.", true);
 
-                plexTrack.plexTrackList.Add(new plexTrack
+                plexTrackList.Add(new TrackInfo
                 {
                     ratingKey = ratingKey,
                     filePath = filePath
                 });
-            }
 
-            foreach (var directory in elements.Elements("Directory"))
-            {
-                string? childKey = directory.Attribute("key")?.Value;
-                if (!string.IsNullOrEmpty(childKey))
-                    FetchAndStoreTracksRecursive(childKey);
+                if (verboseMode)
+                    Logger($"Found track: {filePath} (ratingKey: {ratingKey})", true);
             }
         }
-
 
         /// <summary>
         /// Sends an HTTP request to the Plex API and returns the response as a string.
@@ -295,7 +285,7 @@ namespace ListPorter
                 if (!string.IsNullOrEmpty(body) && (method == HttpMethod.Post || method == HttpMethod.Put))
                     request.Content = new StringContent(body, Encoding.UTF8, "application/json");
 
-                if (logAPIrequests)
+                if (verboseMode)
                     Logger($"{method}: {fullUrl}", true);
 
                 try
@@ -308,7 +298,7 @@ namespace ListPorter
 
                     // Read and return the response content
                     string responseText = response.Content.ReadAsStringAsync().Result;
-                    if (logAPIrequests)
+                    if (verboseMode)
                         Logger($"Received {responseText.Length} bytes sucessfully.", true);
                     return responseText;
                 }
@@ -326,7 +316,6 @@ namespace ListPorter
         /// </summary>
         /// <param name="filePath">The full path to the M3U file.</param>
         /// <returns>true if at least one item within the playlist was loaded successfully</returns>
-
         public static bool LoadM3UPlaylist(string filePath)
         {
             importedPlaylistTitle = "";
@@ -349,9 +338,7 @@ namespace ListPorter
                 string line = rawLine.Trim();
 
                 if (string.IsNullOrEmpty(line) || line.StartsWith('#') && !line.StartsWith("#PLAYLIST:"))
-                {
                     continue;
-                }
 
                 if (line.StartsWith("#PLAYLIST:"))
                 {
@@ -374,8 +361,16 @@ namespace ListPorter
                     }
                     else
                     {
-                        importedPlaylist.Add(line);
+                        // Add to the imported playlist
+                        importedPlaylist.Add(new TrackInfo
+                        {
+                            ratingKey = ratingKey,
+                            filePath = line
+                        });
                         added++;
+
+                        if (verboseMode)
+                            Logger($"Added to playlist: {line} (ratingKey: {ratingKey})", true);
                     }
                 }
             }
@@ -444,15 +439,13 @@ namespace ListPorter
 
         /// <summary>
         /// Finds the Plex `ratingKey` of a track by matching a file path with the entries 
-        /// in `plexTrack.plexTrackList`. Matches are case-insensitive.
+        /// in `TrackInfo.plexTrackList`. Matches are case-insensitive.
         /// </summary>
         /// <param name="filePath">The full file path to search for.</param>
         /// <returns>The ratingKey of the matching track, or -1 if no match is found.</returns>
-
         public static long GetRatingKeyFromFilePath(string filePath)
         {
-            var match = plexTrack.plexTrackList
-                .FirstOrDefault(track => string.Equals(track.filePath, filePath, StringComparison.OrdinalIgnoreCase));
+            var match = plexTrackList.FirstOrDefault(track => string.Equals(track.filePath, filePath, StringComparison.OrdinalIgnoreCase));
 
             return match?.ratingKey ?? -1;
         }
@@ -480,7 +473,6 @@ namespace ListPorter
         /// Adds tracks to a Plex playlist in batches, ensuring the request does not exceed 1000 characters.
         /// </summary>
         /// <param name="ratingKey">The ratingKey of the Plex playlist to add tracks to.</param>
-
         public static void AddTracksToPlaylist(long ratingKey)
         {
             if (importedPlaylist.Count == 0)
@@ -490,7 +482,7 @@ namespace ListPorter
             }
 
             List<long> trackRatingKeys = importedPlaylist
-                .Select(filePath => GetRatingKeyFromFilePath(filePath))
+                .Select(track => track.ratingKey)
                 .Where(rk => rk != -1)
                 .ToList();
 
@@ -591,7 +583,7 @@ namespace ListPorter
         /// </returns>
         public static long GetRatingKeyFromPlaylistName(string playlistName)
         {
-            var match = plexPlaylist.plexPlaylistList
+            var match = plexPlaylistList
                 .FirstOrDefault(playlist => string.Equals(playlist.playlistTitle, playlistName, StringComparison.OrdinalIgnoreCase));
 
             return match?.ratingKey ?? -1;
@@ -603,7 +595,7 @@ namespace ListPorter
         /// </summary>
         public static void DeleteAllPlaylists()
         {
-            foreach (var playlist in plexPlaylist.plexPlaylistList)
+            foreach (var playlist in plexPlaylistList)
                 DeletePlaylist(playlist.ratingKey);
 
             Logger($"Deleted all playlists from Plex.");
@@ -643,9 +635,7 @@ namespace ListPorter
                 var m3u8Files = Directory.GetFiles(filePathOrFile, "*.m3u8");
 
                 foreach (var file in m3uFiles.Concat(m3u8Files))
-                {
                     M3UFilesToImport.Add(Path.GetFullPath(file));
-                }
             }
             else
             {
@@ -659,7 +649,6 @@ namespace ListPorter
         /// <param name="m3uFilePath">The full path to the m3u file to process.</param>
         public static void ProcessPlaylist(string m3uFilePath)
         {
-
             // Step 1: Load the m3u playlist into the importedPlaylist
             bool result = LoadM3UPlaylist(m3uFilePath);
             if (result == false)
@@ -720,28 +709,23 @@ namespace ListPorter
             }
 
             // Step 2: Parse the Plex playlist ratingKeys from the XML response
-            var plexRatingKeys = new List<long>();
-            var xmlDoc = XDocument.Parse(playlistXml);
-
-            plexRatingKeys = xmlDoc
+            List<long> plexRatingKeys = XDocument.Parse(playlistXml)
                 .Descendants("Track")
-                .Select(track => long.Parse(track.Attribute("ratingKey")?.Value ?? "-1"))
-                .Where(ratingKey => ratingKey != -1)
+                .Select(track => long.TryParse(track.Attribute("ratingKey")?.Value, out var rk) ? rk : -1)
+                .Where(rk => rk != -1)
                 .ToList();
 
             // Step 3: Collect ratingKeys from the imported playlist
-            var importedRatingKeys = importedPlaylist
-                .Select(filePath => GetRatingKeyFromFilePath(filePath))
-                .Where(ratingKey => ratingKey != -1)
+            List<long> importedRatingKeys = importedPlaylist
+                .Select(track => track.ratingKey)
+                .Where(rk => rk != -1)
                 .ToList();
 
-            // Step 4: Compare how many items are in each playlist. If they are different,
-            // then they are not identical
+            // Step 4: Compare counts
             if (plexRatingKeys.Count != importedRatingKeys.Count)
                 return false;
 
-
-            // Step 5. Compare the content order as well.
+            // Step 5: Compare order
             for (int i = 0; i < importedRatingKeys.Count; i++)
                 if (plexRatingKeys[i] != importedRatingKeys[i])
                     return false;
@@ -756,7 +740,7 @@ namespace ListPorter
         public static void MirrorPlaylists()
         {
             Logger($"Mirroring playlists on Plex.");
-            foreach (var plex in plexPlaylist.plexPlaylistList)
+            foreach (var plex in plexPlaylistList)
             {
                 if (!processedPlaylistTitles.Contains(plex.playlistTitle))
                 {
@@ -789,14 +773,14 @@ namespace ListPorter
                     return false;
                 }
 
-                Logger($"Successfully connected to Plex server.");
+                Logger($"Successfully connected to Plex server at {plexHost} port {plexPort}.");
                 Logger($"machineIdentifer is {identifier.Length} characters long. First four are: {identifier[..Math.Min(identifier.Length, 4)]}", true);
                 machineIdentifier = identifier;
                 return true;
             }
             catch (Exception ex)
             {
-                Logger($"Failed to connect to Plex: {ex.Message}");
+                Logger($"Failed to connect to Plex server at {plexHost} port {plexPort}: {ex.Message}");
 
                 // Determine the likely issue based on the exception
                 if (ex.Message.Contains("401") || ex.Message.Contains("Unauthorized"))
