@@ -193,6 +193,29 @@ However you can enable this with a couple of steps:
 6. To run, double-click on `ListPorter.exe - Shortcut`. You can rename this to something more useful and move it elsewhere if you'd like.
 7. Once Plex Playlist Updater has finished running, the pop-up window will close automatically.
 
+### Why do I see a warning that some items failed to match the Plex database?
+This usually means the file paths in your playlist don’t match the paths Plex has stored in its library. For example, your playlist might use `D:\Music\...`, but Plex could be expecting `/media/music/....` When these paths don't line up, ListPorter can’t find a match - and it will warn you that some items couldn’t be linked.
+
+You can use these options to help ListPorter rewrite paths to match what Plex expects:
+
+* `--find <text>` and `--replace <text>`   
+  Use these together to rewrite parts of the path. For example: `--find "D:\Music" --replace "/media/music"`
+* `--unix`   
+  Converts Windows-style paths (like `D:\Music\Album\Track.mp3`) into Unix-style paths (`/mnt/d/Music/Album/Track.mp3`). Useful if your playlist was created on Windows and Plex runs on Linux/macOS.
+* `--windows`   
+  Converts Unix-style paths into Windows format. Use this if your playlist was created on Linux/macOS and Plex is on Windows.
+
+You can combine these options if needed - for example, `--unix --find "/mnt/d/Music" --replace "/media/music"`
+
+To find out what path Plex is expecting:
+
+1. Open [Plex Web](https://app.plex.tv/).
+2. Navigate to one of the problematic tracks (make sure it’s also in the playlist you're importing).
+3. Click the three dots (…) and choose “Get Info”.
+4. Look under the Files section - this shows the full path Plex has stored for the track.
+
+Adjust your playlist paths using the options above to match this format and re-run ListPorter. Once the paths align, the warnings should disappear and all tracks will be properly imported.
+
 ### Can I run this on a headless Linux server or NAS?
 Yes. The tool is a command-line application and can be run from a headless environment like a Linux server or NAS, provided the [.NET 8.0 runtime](https://dotnet.microsoft.com/en-us/download/dotnet/8.0/runtime) is installed and the binary has execute permissions.
 
