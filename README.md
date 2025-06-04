@@ -267,6 +267,20 @@ Some external apps and hardware players (such as Sonos) reference Plex playlists
 
 Please raise an issue at https://github.com/mrsilver76/listporter/issues.
 
+## 💡 Possible future enhancements
+
+These features are currently under consideration and may or may not be implemented. There is no commitment to deliver them, and no timeline has been established for their development. They represent exploratory ideas intended to improve the tool's functionality and usability.
+
+- Add reporting of how many playlists were created, updated, or deleted during a sync.
+- Improve resilience to malformed or corrupted characters in non-UTF-8 encoded playlists by enhancing the matching logic to handle such edge cases gracefully.
+- Introduce a fuzzy-matching algorithm that splits file paths into segments and compares only the last three components (typically artist, album, and song title) using alphanumeric characters to improve match accuracy when direct paths differ.
+- Extend connection logic to handle Plex servers with “Secure Connections” set to “Required” by supporting both `http://` and `https://` protocols, defaulting to `http://` when unspecified.
+- Accept `--linux` as an alternative to `--unix`.
+- Add a `--base-path` option to allow users to prepend a directory path to all absolute paths found in playlists.
+- Reformat `--help` output and general console output to fit within a 75-character terminal width.
+
+If you're particularly enthusiastic about any of these potential features or have ideas of your own, you’re encouraged to raise a [feature request](https://github.com/mrsilver76/listporter/issues).
+
 ## 📝 Attribution
 
 - Plex is a registered trademark of Plex, Inc. This tool is not affiliated with or endorsed by Plex, Inc.
