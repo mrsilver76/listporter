@@ -1,4 +1,22 @@
-﻿using System.Reflection;
+﻿/*
+ * ListPorter - Upload standard or extended .m3u playlist files to Plex Media Server.
+ * Copyright (C) 2020-2025 Richard Lawrence
+ * 
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, see
+ * < https://www.gnu.org/licenses/>.
+ */
+
 using IniParser;
 using IniParser.Model;
 using System.Text.RegularExpressions;
@@ -79,7 +97,7 @@ namespace ListPorter
                     replaceText = args[i + 1];
                     i++;
                 }
-                else if (arg == "-u" || arg == "--unix")
+                else if (arg == "-u" || arg == "--unix" || arg == "--linux")  // Allow --linux as an alias for --unix
                     pathStyle = PathStyle.ForceLinux;
                 else if (arg == "-w" || arg == "--windows")
                     pathStyle = PathStyle.ForceWindows;
@@ -123,28 +141,32 @@ namespace ListPorter
                                     "Music & multimedia icon by paonkz - Flaticon (https://www.flaticon.com/free-icons/music-and-multimedia)\n");
 
             Console.WriteLine("Mandatory arguments:\n" +
-                                "   -s, --server <address>[:<port>]    Plex server address (with optional port)\n" +
+                                "   -s, --server <address>[:<port>]    Plex server address.\n" +
+                                "                                      (port is optional, defaults to 32400).\n" +
                                 "   -t, --token <token>                Plex authentication token.\n" +
                                 "   -l, --library <library>            Plex library ID to use.\n" +
                                 "   -i, --import <path>                Path to a playlist file or directory.\n\n" +
                                 "Optional arguments:\n" +
                                 "  Playlist sync options:\n" +
-                                "    -d, --delete                      Delete all playlists from Plex library on start.\n" +
-                                "    -m, --mirror                      Mirror Plex library to match playlists provided.\n" +
+                                "    -d, --delete                      Delete all playlists from library on start.\n" +
+                                "    -m, --mirror                      Mirror Plex library to match playlists.\n" +
                                 "\n" +
                                 "  Path rewriting options:\n" +
-                                "    -u, --unix                        Force forward slashes in song paths, for Linux Plex servers.\n" +
-                                "    -w, --windows                     Force backslashes in song paths, for Windows Plex servers.\n" +
+                                "    -u, --unix                        Force forward slashes in song paths.\n" +
+                                "                                      (for Plex servers running on Linux)\n" +
+                                "    -w, --windows                     Force backslashes in song paths.\n" +
+                                "                                      (for Plex servers running on Windows)\n" +
                                 "    -f, --find <text>                 Find text within the song path.\n" +
                                 "    -r, --replace <text>              Replace found text in song path with <text>.\n" +
                                 "\n" +
                                 "  Other options:\n" +
                                 "    -v, --verbose                     Verbose output to log files.\n" +
                                 "\n" +
-                               $"Logs are written to {Path.Combine(appDataPath, "Logs")}\n");
+                               $"Logs are written to {Path.Combine(appDataPath, "Logs")}");
 
             if (!string.IsNullOrEmpty(errorMessage))
             {
+                Console.WriteLine();
                 Console.WriteLine($"Error: {errorMessage}");
                 Environment.Exit(-1);
             }

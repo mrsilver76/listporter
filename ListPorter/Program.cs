@@ -1,12 +1,26 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿/*
+ * ListPorter - Upload standard or extended .m3u playlist files to Plex Media Server.
+ * Copyright (C) 2020-2025 Richard Lawrence
+ * 
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, see
+ * < https://www.gnu.org/licenses/>.
+ */
+
 using System.Xml.Linq;
-using System.Net.Http;
 using System.Text;
 using static ListPorter.Helpers;
 using System.Reflection;
-using System.Diagnostics.Contracts;
 
 namespace ListPorter
 {
@@ -44,6 +58,7 @@ namespace ListPorter
         public static string findText = ""; // Text to find in file paths
         public static string replaceText = ""; // Text to replace in file paths
         public static bool verboseMode = false; // Output verbose messages (API calls and lookup results)
+        public static int totalImportErrors = 0;  // Total number of import errors
         public enum PathStyle
         {
             Auto, // Do nothing
@@ -116,8 +131,32 @@ namespace ListPorter
             if (mirrorPlaylists)
                 MirrorPlaylists();
 
+
             // Finished
             Logger($"ListPorter finished.");
+
+            if (totalImportErrors > 0)
+            {
+                Console.WriteLine();
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($" ⚠️ Warning: {Pluralise(totalImportErrors, "track", "tracks")} couldn't be found in the Plex database!");
+                Console.ResetColor();
+                if (string.IsNullOrEmpty(findText) && string.IsNullOrEmpty(replaceText))
+                {
+                    Console.WriteLine("    This usually means the file paths in your playlist don't match what Plex has stored.");
+                    Console.WriteLine("    Try using the --find and --replace options to adjust parts of the path. You may");
+                    Console.WriteLine("    also need to use --unix or --windows to convert paths between operating systems.");
+                }
+                else
+                {
+                    Console.WriteLine("    You've already used path rewriting options, but files still couldn’t be found.");
+                    Console.WriteLine("    Double-check that your --find/--replace or --unix/--windows arguments match");
+                    Console.WriteLine("    how Plex has stored the actual file paths.");
+                }
+                Console.WriteLine();
+                Console.WriteLine("    See the README for help: https://github.com/mrsilver76/listporter");
+            }
+
             CheckLatestRelease();
             System.Environment.Exit(0);
         }
@@ -198,7 +237,7 @@ namespace ListPorter
         {
             Logger("Searching for audio tracks on Plex. This may take a while...");
 
-            const int pageSize = 2000;
+            const int pageSize = 1000;  // >1000 will soon generate "400 Bad Request"
             int start = 0;
 
             while (true)
@@ -320,6 +359,8 @@ namespace ListPorter
         {
             importedPlaylistTitle = "";
             importedPlaylist.Clear();
+            int playlistImportErrors = 0;  // Count of errors during playlist import
+            bool verbosity = false;  // Whether to log verbose messages. When playlistImportErrors gets over 5, this will be set to true to reduce the amount of output.
 
             if (!File.Exists(filePath))
             {
@@ -349,15 +390,26 @@ namespace ListPorter
                 else
                 {
                     // Rewrite any changes to the location of the file
-                    line = RewriteLocation(line);
+                    string rewrittenLine = RewriteLocation(line);
 
                     // See if we can find the item stored within Plex
-                    long ratingKey = GetRatingKeyFromFilePath(line);
-
+                    long ratingKey = GetRatingKeyFromFilePath(rewrittenLine);
                     if (ratingKey == -1)
                     {
-                        Logger($"Warning: No Plex ratingKey for: {line}", true);
+                        if (rewrittenLine == line)
+                            Logger($"No match found in Plex library {plexLibrary} for path '{line}'", verbosity);
+                        else
+                            Logger($"No match found in Plex library {plexLibrary} for path '{rewrittenLine}' (tranformed from '{line}')", verbosity);
+
                         failed++;
+                        playlistImportErrors++;
+                        totalImportErrors++;
+
+                        if (playlistImportErrors == 5)
+                        {
+                            verbosity = true;  // Switch to verbose logging after 5 errors
+                            Logger($"Showing only first 5 unmatched audio tracks in this playlist - see logs for further matching errors.", false);
+                        }
                     }
                     else
                     {
@@ -370,7 +422,7 @@ namespace ListPorter
                         added++;
 
                         if (verboseMode)
-                            Logger($"Added to playlist: {line} (ratingKey: {ratingKey})", true);
+                            Logger($"Added to playlist: {rewrittenLine} (ratingKey: {ratingKey})", true);
                     }
                 }
             }
