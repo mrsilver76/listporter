@@ -27,7 +27,8 @@ Each release includes the following files (`x.x.x` denotes the version number):
 |:--------|:-----------|
 |`ListPorter-x.x.x-win-x64.exe`|✅ For Microsoft Windows 10 and 11 ⬅️ **Most users should choose this**
 |`ListPorter-x.x.x-linux-x64`|For Linux on Intel/AMD CPUs|
-|`ListPorter-x.x.x-linux-arm64`|For Linux on ARM (e.g. Raspberry Pi)|
+| `ListPorter-x.x.x-linux-arm64` | For Linux on 64-bit ARM devices (e.g. Raspberry Pi 4, ARM servers) |
+| `ListPorter-x.x.x-linux-arm` | For Linux on 32-bit ARM devices (e.g. Raspberry Pi 3 and earlier) |
 |`ListPorter-x.x.x-osx-arm64`|For macOS on Apple Silicon (eg. M1 and newer)|
 |`ListPorter-x.x.x-osx-x64`|For macOS on Intel-based Macs (pre-Apple Silicon)|
 |Source code (zip)|ZIP archive of the source code|
@@ -43,10 +44,10 @@ Each release includes the following files (`x.x.x` denotes the version number):
 
 ### Platform testing notes
 
-* Tested extensively: Windows 11
-* Tested moderately: Linux (ARM)
-* Not tested at all: Windows 10, Linux (x64), macOS (x64 & Apple Silicon)
-
+* Tested extensively: Windows 11  
+* Tested moderately: Linux (64-bit ARM, Raspberry Pi 5 only)  
+* Not tested: Windows 10, Linux (x64), Linux (32-bit ARM), macOS (x64 & Apple Silicon)
+  
 ## 🚀 Quick start guide
 
 Below are a couple of command scenarios for using ListPorter. They will work on all platforms.
@@ -132,7 +133,7 @@ If your `.m3u` playlists reference song locations that Plex can’t access (e.g.
 
 These options let you adjust how file paths are interpreted during import, so they match the structure expected by your Plex server. The playlist files themselves are not changed.
 
-- **`-u`, `--unix`**   
+- **`-u`, `--unix`, `--linux`**   
 Force playlist paths to use forward slashes (`/`), often required for Plex servers running on Linux, macOS, or NAS.
 
 - **`-w`, `--windows`**   
@@ -259,7 +260,7 @@ Use forward slashes in the `--find` string to match the slash transformation:
 
 This will correctly transform the path to `/mnt/media/Pop/track.mp3`
 
-### Why does the tool only clear the contents of existing playlists instead of deleting and recreating them?
+### Why does the tool clear the contents of existing playlists instead of deleting and recreating them?
 
 Some external apps and hardware players (such as Sonos) reference Plex playlists by their unique internal ID. If the playlist is deleted and recreated, it gets a new ID, which can break external links or integrations. To maintain compatibility, the tool clears the playlist's contents and repopulates it instead of deleting the entire playlist. This ensures external systems retain their connection to the playlist.
 
@@ -275,9 +276,9 @@ These features are currently under consideration and may or may not be implement
 - Improve resilience to malformed or corrupted characters in non-UTF-8 encoded playlists by enhancing the matching logic to handle such edge cases gracefully.
 - Introduce a fuzzy-matching algorithm that splits file paths into segments and compares only the last three components (typically artist, album, and song title) using alphanumeric characters to improve match accuracy when direct paths differ.
 - Extend connection logic to handle Plex servers with “Secure Connections” set to “Required” by supporting both `http://` and `https://` protocols, defaulting to `http://` when unspecified.
-- Accept `--linux` as an alternative to `--unix`.
+- ✅ ~~Accept `--linux` as an alternative to `--unix`.~~
 - Add a `--base-path` option to allow users to prepend a directory path to all absolute paths found in playlists.
-- Reformat `--help` output and general console output to fit within a 75-character terminal width.
+- ✅ ~~Reformat `--help` output and general console output to fit within a 75-character terminal width.~~
 
 If you're particularly enthusiastic about any of these potential features or have ideas of your own, you’re encouraged to raise a [feature request](https://github.com/mrsilver76/listporter/issues).
 
@@ -288,6 +289,16 @@ If you're particularly enthusiastic about any of these potential features or hav
 - With thanks to https://www.plexopedia.com/plex-media-server/api/ for Plex API documentation.
 
 ## 🕰️ Version history
+
+### 0.9.4 (tbc)
+- Added `--linux` as an alias for `--unix`.
+- Improved `--help` formatting for better readability on 80-character terminals.
+- Added contextual tips for import errors to assist troubleshooting without needing logs.
+- Reduced API page size to 1000 to prevent Plex from generating warning entries.
+- Path matching and rewriting issues are now surfaced to users (max 5 per playlist).
+- Replaced `Publish.bat` with a streamlined `Publish.ps1` script for building executables.
+- Added `linux-arm` builds for compatibility with Raspberry Pi 3 devices.
+- Added GNU GPL v2 license notice to source files for clarity.
 
 ### 0.9.3 (24 May 2025)
 - Fixed version checker incorrectly reporting updates available when already on the latest version.
