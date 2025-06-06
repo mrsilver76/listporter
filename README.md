@@ -11,6 +11,7 @@ _A cross-platform command-line tool (Windows, Linux, macOS) for importing standa
 * 🌐 Works with any Plex server platform (Windows, Linux, NAS, macOS) via the Plex API.
 * ✅ Skips importing playlists that haven’t changed.
 * 🪞 Mirrors Plex playlists to match imported M3U files (optional)
+* 🎯 Fuzzy matching logic (using last three path parts) to improve playlist-to-Plex matching.
 * 🔁 Force playlist paths to use `/` or `\` to match your Plex server’s file path format (Linux, macOS, NAS or Windows).
 * 🛠️ Modify playlist file paths using find & replace rules, ensuring they align with how Plex sees your media library.
 * 🧹 Deletes all Plex playlists before import (optional)
@@ -83,6 +84,7 @@ ListPorter --server pimachine --token ABCDEFG --library 10 --import "C:\Playlist
 * Use Plex token `ABCDEFG`
 * Use music library ID `10`
 * Import all playlists found in `C:\Playlists`
+* Disable fuzzy matching
 * Replace Windows backslashes (`\`) in the playlist path to forward slashes (`/`)
 * Replace `C:\Users\MrSilver\Music\iTunes\iTunes Media\Music` in the playlist paths to `/home/pi/music`
 * Delete all playlists on Plex first before importing
@@ -129,9 +131,13 @@ ListPorter -s <address>[:<port>] -t <token> -l <library> -i <path> [options]
 
 #### Path rewriting options
 
-If your `.m3u` playlists reference song locations that Plex can’t access (e.g. local drives or mismatched paths), those tracks won’t be playable. For instance, a playlist might use a local path like `D:\MyMusic`, while your Plex server expects a network path like `\\homepc\MyMusic` or `/mnt/music`.
+ListPorter tries to match each file path in your playlist with the paths Plex has stored. It first attempts an exact match. If that fails, it automatically uses fuzzy matching, based on the assumption that music files are organised with a structure of `artist/album/track`. It compares only the last three parts of each path, ignoring drive letters, shares, or deeper folder structures.
 
-These options let you adjust how file paths are interpreted during import, so they match the structure expected by your Plex server. The playlist files themselves are not changed.
+This approach works well when root paths differ or when file systems vary across devices, as long as the layout near the file itself is consistent. However, if files have been renamed or stored with a different folder hierarchy, exact or fuzzy matching may fail.
+
+If you use any of the options below to rewrite paths, fuzzy matching will be automatically disabled. This is to avoid conflicts between automated and manual path handling.
+
+These options don’t modify the playlist files themselves - they only affect how paths are interpreted during import.
 
 - **`-u`, `--unix`, `--linux`**   
 Force playlist paths to use forward slashes (`/`), often required for Plex servers running on Linux, macOS, or NAS.
@@ -147,6 +153,9 @@ Searches for a substring in each song's file path. Intended for use with `--repl
 
 - **`-r <text>`, `--replace <text>`**   
 Replaces matched text from `--find` with this new value. If `--find` is used and there is no `--replace` value, then it will be assumed to be blank and the matching string will be removed. 
+
+- **`-x`, `--exact-only`**   
+Disables fuzzy matching and any automatic path adjustments. Only exact, case-insensitive matches will be used to link playlist files to Plex tracks. Use this if you want full control and are relying entirely on exact paths or other file rewriting options listed above.
 
 ### Other options
 
@@ -195,18 +204,9 @@ However you can enable this with a couple of steps:
 7. Once Plex Playlist Updater has finished running, the pop-up window will close automatically.
 
 ### Why do I see a warning that some items failed to match the Plex database?
-This usually means the file paths in your playlist don’t match the paths Plex has stored in its library. For example, your playlist might use `D:\Music\...`, but Plex could be expecting `/media/music/....` When these paths don't line up, ListPorter can’t find a match - and it will warn you that some items couldn’t be linked.
+This warning appears when ListPorter can’t link some playlist items to Plex tracks because their file paths don’t align closely enough. Although ListPorter uses automatic fuzzy matching (assuming the path ends `artist/album/track`) it will fail if these components differ substantially or are absent.
 
-You can use these options to help ListPorter rewrite paths to match what Plex expects:
-
-* `--find <text>` and `--replace <text>`   
-  Use these together to rewrite parts of the path. For example: `--find "D:\Music" --replace "/media/music"`
-* `--unix`   
-  Converts Windows-style paths (like `D:\Music\Album\Track.mp3`) into Unix-style paths (`/mnt/d/Music/Album/Track.mp3`). Useful if your playlist was created on Windows and Plex runs on Linux/macOS.
-* `--windows`   
-  Converts Unix-style paths into Windows format. Use this if your playlist was created on Linux/macOS and Plex is on Windows.
-
-You can combine these options if needed - for example, `--unix --find "/mnt/d/Music" --replace "/media/music"`
+In the situation where fuzzy matching is not working, you can use `--find`, `--replace`, `--unix` and `--windows` to help rewrite your playlist tracks into a path that Plex can recognise.
 
 To find out what path Plex is expecting:
 
@@ -215,7 +215,7 @@ To find out what path Plex is expecting:
 3. Click the three dots (…) and choose “Get Info”.
 4. Look under the Files section - this shows the full path Plex has stored for the track.
 
-Adjust your playlist paths using the options above to match this format and re-run ListPorter. Once the paths align, the warnings should disappear and all tracks will be properly imported.
+Adjust your playlist paths using the options above to match this format and re-run ListPorter. Once the paths align, the warnings should disappear.
 
 ### Can I run this on a headless Linux server or NAS?
 Yes. The tool is a command-line application and can be run from a headless environment like a Linux server or NAS, provided the [.NET 8.0 runtime](https://dotnet.microsoft.com/en-us/download/dotnet/8.0/runtime) is installed and the binary has execute permissions.
@@ -228,11 +228,6 @@ When enabled, `--mirror` will remove any Plex playlists that are not represented
 
 ### Does this overwrite existing playlists in Plex?
 Only if their content has changed. The tool compares the track list in your M3U file with the existing Plex playlist. If they differ, it clears the Plex playlist and re-imports the correct tracks. If they are identical, it skips the update.
-
-### How do I handle mismatched paths between the source and Plex server?
-You can use the `--find` and `--replace` options to rewrite the file paths in your playlist to match what Plex expects. For example, if your M3U uses `D:\Music` and Plex expects `\\server\Music`, use `--find "D:\Music" --replace "\\server\Music"`
-
-Also use `--unix` or `--windows` if Plex uses forward or backslashes differently than your M3U file.
 
 ### I'm using `--windows` or `--unix`. Why isn't `--find` matching?
 The `--windows` and `--unix` options change all slashes in the song paths before the `--find` and `--replace` logic runs. This means that if your `--find` string uses the original slash style (e.g., backslashes on Windows), it won’t match the transformed path.
@@ -273,8 +268,8 @@ Please raise an issue at https://github.com/mrsilver76/listporter/issues.
 These features are currently under consideration and may or may not be implemented. There is no commitment to deliver them, and no timeline has been established for their development. They represent exploratory ideas intended to improve the tool's functionality and usability.
 
 - Add reporting of how many playlists were created, updated, or deleted during a sync.
-- Improve resilience to malformed or corrupted characters in non-UTF-8 encoded playlists by enhancing the matching logic to handle such edge cases gracefully.
-- Introduce a fuzzy-matching algorithm that splits file paths into segments and compares only the last three components (typically artist, album, and song title) using alphanumeric characters to improve match accuracy when direct paths differ.
+- ✅ ~~Improve resilience to malformed or corrupted characters in non-UTF-8 encoded playlists by enhancing the matching logic to handle such edge cases gracefully.~~
+- ✅ ~~Introduce a fuzzy-matching algorithm that splits file paths into segments and compares only the last three components (typically artist, album, and song title) using alphanumeric characters to improve match accuracy when direct paths differ.~~
 - Extend connection logic to handle Plex servers with “Secure Connections” set to “Required” by supporting both `http://` and `https://` protocols, defaulting to `http://` when unspecified.
 - ✅ ~~Accept `--linux` as an alternative to `--unix`.~~
 - Add a `--base-path` option to allow users to prepend a directory path to all absolute paths found in playlists.
