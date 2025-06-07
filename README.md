@@ -13,7 +13,8 @@ _A cross-platform command-line tool (Windows, Linux, macOS) for importing standa
 * 🪞 Mirrors Plex playlists to match imported M3U files (optional)
 * 🎯 Fuzzy matching logic (using last three path parts) to improve playlist-to-Plex matching.
 * 🔁 Force playlist paths to use `/` or `\` to match your Plex server’s file path format (Linux, macOS, NAS or Windows).
-* 🛠️ Modify playlist file paths using find & replace rules, ensuring they align with how Plex sees your media library.
+* 🛠️ Modify playlist file paths using find & replace rules, ensuring they align with how Plex sees your media library (optional)
+* 🧭 Prepend a base path to support relative paths in playlists (optional)
 * 🧹 Deletes all Plex playlists before import (optional)
 * 🔗 Preserves playlist IDs to maintain compatibility with external players (e.g. Sonos)
 * 📘 Logs activity to timestamped text files
@@ -103,12 +104,13 @@ ListPorter -s <address>[:<port>] -t <token> -l <library> -i <path> [options]
 - **`-s <address>[:<port>]`, `--server <address>[:<port>]`**   
   Plex server address, optionally including the port (e.g. `localhost:32400`). If you do not supply a port then the default (`32400`) will be used.
 
->[!WARNING]
->This tool does not currently support Plex servers set to require secure connections. To use it, change Plex’s Secure Connections setting to "Preferred" under **Settings > Network > Secure Connections**.
+  You can also prefix with `https://` or `http://` to specify the connection type (default is `http`).
 
+>[!NOTE]
+>If Plex is configured to require secure connections (under Settings > Remote Access) then plain `http://` connections will fail, so use `https://` instead.
 
 - **`-t <token>`, `--token <token>`**   
-  Plex authentication token. Required to interact with your Plex server. To find out your token, see the [Plex support article](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/).
+  Plex authentication token. Required to interact with your Plex server. To find out your token, see [Plex's guide](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/).
 
 >[!CAUTION]
 >You should never share your Plex token with anyone!
@@ -135,7 +137,7 @@ ListPorter tries to match each file path in your playlist with the paths Plex ha
 
 This approach works well when root paths differ or when file systems vary across devices, as long as the layout near the file itself is consistent. However, if files have been renamed or stored with a different folder hierarchy, exact or fuzzy matching may fail.
 
-If you use any of the options below to rewrite paths, fuzzy matching will be automatically disabled. This is to avoid conflicts between automated and manual path handling.
+**If you use any of the options below to rewrite paths, fuzzy matching will be automatically disabled.** This is to avoid conflicts between automated and manual path handling.
 
 These options don’t modify the playlist files themselves - they only affect how paths are interpreted during import.
 
@@ -145,7 +147,7 @@ Force playlist paths to use forward slashes (`/`), often required for Plex serve
 - **`-w`, `--windows`**   
 Force playlist paths to use backslashes (`\`), as used by Plex servers on Windows.
 
-- **`-f <text>`, `--find <text>`**
+- **`-f <text>`, `--find <text>`**   
 Searches for a substring in each song's file path. Intended for use with `--replace` to rewrite paths. Matching is case-insensitive and only one `--find` string is supported per run.
 
 > [!IMPORTANT]
@@ -153,6 +155,11 @@ Searches for a substring in each song's file path. Intended for use with `--repl
 
 - **`-r <text>`, `--replace <text>`**   
 Replaces matched text from `--find` with this new value. If `--find` is used and there is no `--replace` value, then it will be assumed to be blank and the matching string will be removed. 
+
+- **`-b <path>`, `--base-path <path>`**   
+Specifies a base path to prepend to all playlist entries. This is useful when your .m3u playlists contain relative paths (e.g. `./music/track.mp3`). If a track’s path starts with `.`, the leading dot will be removed before applying the base path.
+
+The base path is applied after all other rewriting options (such as `--find`/`--replace` or `--unix`/`--windows`) and will affect all playlists in the current run.
 
 - **`-x`, `--exact-only`**   
 Disables fuzzy matching and any automatic path adjustments. Only exact, case-insensitive matches will be used to link playlist files to Plex tracks. Use this if you want full control and are relying entirely on exact paths or other file rewriting options listed above.
@@ -263,19 +270,9 @@ Some external apps and hardware players (such as Sonos) reference Plex playlists
 
 Please raise an issue at https://github.com/mrsilver76/listporter/issues.
 
-## 💡 Possible future enhancements
+## 💡 Future development: open but unplanned
 
-These features are currently under consideration and may or may not be implemented. There is no commitment to deliver them, and no timeline has been established for their development. They represent exploratory ideas intended to improve the tool's functionality and usability.
-
-- Add reporting of how many playlists were created, updated, or deleted during a sync.
-- ✅ ~~Improve resilience to malformed or corrupted characters in non-UTF-8 encoded playlists by enhancing the matching logic to handle such edge cases gracefully.~~
-- ✅ ~~Introduce a fuzzy-matching algorithm that splits file paths into segments and compares only the last three components (typically artist, album, and song title) using alphanumeric characters to improve match accuracy when direct paths differ.~~
-- Extend connection logic to handle Plex servers with “Secure Connections” set to “Required” by supporting both `http://` and `https://` protocols, defaulting to `http://` when unspecified.
-- ✅ ~~Accept `--linux` as an alternative to `--unix`.~~
-- Add a `--base-path` option to allow users to prepend a directory path to all absolute paths found in playlists.
-- ✅ ~~Reformat `--help` output and general console output to fit within a 75-character terminal width.~~
-
-If you're particularly enthusiastic about any of these potential features or have ideas of your own, you’re encouraged to raise a [feature request](https://github.com/mrsilver76/listporter/issues).
+ListPorter currently meets the needs it was designed for, and no major new features are planned at this time. However, the project remains open to community suggestions and improvements. If you have ideas or see ways to enhance the tool, please feel free to submit a [feature request](https://github.com/mrsilver76/listporter/issues).
 
 ## 📝 Attribution
 
@@ -285,7 +282,11 @@ If you're particularly enthusiastic about any of these potential features or hav
 
 ## 🕰️ Version history
 
-### 0.9.4 (tbc)
+### 1.0.0 (tbc)
+- 🏁 Declared as the first stable release.
+- Added fuzzy matching logic to improve playlist-to-Plex track matching when exact paths don’t align.
+- Added support for secure connections (HTTPS) when communicating with Plex servers.
+- Added `--base-path` (`-b)` option to prepend a base path for playlists using relative paths.
 - Added `--linux` as an alias for `--unix`.
 - Improved `--help` formatting for better readability on 80-character terminals.
 - Added contextual tips for import errors to assist troubleshooting without needing logs.
