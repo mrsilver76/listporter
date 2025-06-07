@@ -131,6 +131,9 @@ ListPorter -s <address>[:<port>] -t <token> -l <library> -i <path> [options]
 - **`-m`, `--mirror`**   
   Mirrors Plex playlists to match the imported `.m3u` files. Any Plex playlists not represented in the imported list will be removed. Only audio playlists that are manual and entirely within the specified library are affected.
 
+> [!CAUTION]
+> Be careful when using `--mirror` with a single file: this will cause all other playlists in the library to be removed, keeping only the one you provided.
+
 #### Path rewriting options
 
 ListPorter tries to match each file path in your playlist with the paths Plex has stored. It first attempts an exact match. If that fails, it automatically uses fuzzy matching, based on the assumption that music files are organised with a structure of `artist/album/track`. It compares only the last three parts of each path, ignoring drive letters, shares, or deeper folder structures.
@@ -142,24 +145,24 @@ This approach works well when root paths differ or when file systems vary across
 These options don’t modify the playlist files themselves - they only affect how paths are interpreted during import.
 
 - **`-u`, `--unix`, `--linux`**   
-Force playlist paths to use forward slashes (`/`), often required for Plex servers running on Linux, macOS, or NAS.
+Force playlist paths to use forward slashes (`/`), often required for Plex servers running on Linux, macOS, or NAS. This does not affect any path set using `--base-path`.
 
 - **`-w`, `--windows`**   
-Force playlist paths to use backslashes (`\`), as used by Plex servers on Windows.
+Force playlist paths to use backslashes (`\`), as used by Plex servers on Windows. This does not affect any path set using `--base-path`.
 
 - **`-f <text>`, `--find <text>`**   
-Searches for a substring in each song's file path. Intended for use with `--replace` to rewrite paths. Matching is case-insensitive and only one `--find` string is supported per run.
+Searches for a substring in each song's file path. Intended for use with `--replace` to rewrite paths. Matching is case-insensitive and only one `--find` string is supported per run. Paths set using `--base-path` will not be searched.
 
 > [!IMPORTANT]
 > If you're also using `--unix` or `--windows`, the slash conversion happens before the search-and-replace step. Be sure your `--find` value uses the correct slash style for matching.
 
 - **`-r <text>`, `--replace <text>`**   
-Replaces matched text from `--find` with this new value. If `--find` is used and there is no `--replace` value, then it will be assumed to be blank and the matching string will be removed. 
+Replaces matched text from `--find` with this new value. If `--find` is used and there is no `--replace` value, then it will be assumed to be blank and the matching string will be removed. Paths set using `--base-path` will not be affected.
 
 - **`-b <path>`, `--base-path <path>`**   
-Specifies a base path to prepend to all playlist entries. This is useful when your .m3u playlists contain relative paths (e.g. `./music/track.mp3`). If a track’s path starts with `.`, the leading dot will be removed before applying the base path.
-
-The base path is applied after all other rewriting options (such as `--find`/`--replace` or `--unix`/`--windows`) and will affect all playlists in the current run.
+Specifies a base path to prepend to all playlist entries. This is useful when your .m3u playlists contain relative paths (e.g. `./music/track.mp3`). If a track’s path starts with `./` or `.\` then the leading dot will be removed before applying the base path.
+  
+  The base path is applied after all other rewriting options (such as `--find`/`--replace` or `--unix`/`--windows`) and will affect all playlists in the current run.
 
 - **`-x`, `--exact-only`**   
 Disables fuzzy matching and any automatic path adjustments. Only exact, case-insensitive matches will be used to link playlist files to Plex tracks. Use this if you want full control and are relying entirely on exact paths or other file rewriting options listed above.
@@ -213,7 +216,7 @@ However you can enable this with a couple of steps:
 ### Why do I see a warning that some items failed to match the Plex database?
 This warning appears when ListPorter can’t link some playlist items to Plex tracks because their file paths don’t align closely enough. Although ListPorter uses automatic fuzzy matching (assuming the path ends `artist/album/track`) it will fail if these components differ substantially or are absent.
 
-In the situation where fuzzy matching is not working, you can use `--find`, `--replace`, `--unix` and `--windows` to help rewrite your playlist tracks into a path that Plex can recognise.
+In the situation where fuzzy matching is not working, you can use `--find`, `--replace`, `--unix`, `--windows` and `--base-path` to help rewrite your playlist tracks into a path that Plex can recognise.
 
 To find out what path Plex is expecting:
 
@@ -294,6 +297,7 @@ ListPorter currently meets the needs it was designed for, and no major new featu
 - Path matching and rewriting issues are now surfaced to users (max 5 per playlist).
 - Replaced `Publish.bat` with a streamlined `Publish.ps1` script for building executables.
 - Added `linux-arm` builds for compatibility with Raspberry Pi 3 devices.
+- Added additional logging to aid in debugging.
 - Added GNU GPL v2 license notice to source files for clarity.
 
 ### 0.9.3 (24 May 2025)
