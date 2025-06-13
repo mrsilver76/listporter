@@ -12,8 +12,8 @@ _A cross-platform command-line tool (Windows, Linux, macOS) for importing standa
 * ✅ Skips importing playlists that haven’t changed.
 * 🪞 Mirrors Plex playlists to match imported M3U files (optional)
 * 🎯 Fuzzy matching logic (using last three path parts) to improve playlist-to-Plex matching.
-* 🔁 Force playlist paths to use `/` or `\` to match your Plex server’s file path format (Linux, macOS, NAS or Windows).
-* 🛠️ Modify playlist file paths using find & replace rules, ensuring they align with how Plex sees your media library (optional)
+* 🔁 Force playlist paths to use / or \ to match your Plex server’s file format (optional)
+* 🛠️ Rewrite playlist paths using find & replace rules to match your Plex library (optional)
 * 🧭 Prepend a base path to support relative paths in playlists (optional)
 * 🧹 Deletes all Plex playlists before import (optional)
 * 🔗 Preserves playlist IDs to maintain compatibility with external players (e.g. Sonos)
