@@ -52,48 +52,32 @@ Each release includes the following files (`x.x.x` denotes the version number):
   
 ## 🚀 Quick start guide
 
-Below are a couple of command scenarios for using ListPorter. They will work on all platforms.
+This is the simplest and most common way to use ListPorter. It works across platforms and uses fuzzy matching to automatically align playlist paths with your Plex library. By using `--mirror` (`-m`), it also ensures Plex contains the exact same playlists as your export folder - removing any that aren't found there from Plex.
+
+>[!NOTE]
+>Using `--mirror` (`-m`) will delete Plex playlists that are not present in your import folder.
 
 ```
 ListPorter -s 127.0.0.1 -t ABCDEFG -l 8 -i "C:\Playlists" -m
 
 ListPorter --server 127.0.0.1 --token ABCDEFG --library 8 --import "C:\Playlists" --mirror
 ```
-* Connect to the Plex server running on the same machine
-* Use Plex token `ABDEFGH`
-* Use music library ID `8`
-* Import all playlists in `C:\Playlists\`
-* Remove any playlists from Plex that aren't imported (mirror)
-  
-```
-ListPorter -s 192.168.1.100 -t ABCDEFG -l 4 -I "/home/mrsilver/playlists/Running.m3u" -w
 
-ListPorter --server 192.168.1.100 --token ABCDEFG --library 4 --import "/home/mrsilver/playlists/running.m3u" --windows
-```
-* Connect to Plex Server running at `192.168.1.100`
-* Use Plex token `ABCDEFG`
-* Use music library ID `4`
-* Import all playlists in `/home/mrsilver/playlists/`
-* Replace Linux forward slashes (`/`) in the playlist path to Windows backslashes (`\`)
+The example below shows a more advanced scenario suitable when fuzzy matching isn’t enough. It demonstrates how to explicitly rewrite paths and convert formats when importing playlists created on one platform (e.g. Windows) into a Plex server running on another (e.g. Linux).
+Note that `--find` (`-f`) uses forward slashes because `--linux` (`-l`) converts backslashes to forward slashes.
+
+>[!CAUTION]
+>This example deletes existing Plex playlists before import. Only use `--delete` (`-d`) if you're sure you want to replace everything..
 
 ```
-ListPorter -s pimachine -t ABCDEFG -l 10 -i "C:\Playlists" -l -f "C:/Users/MrSilver/Music/iTunes/iTunes Media/Music" -r "/home/pi/music" -d
+ListPorter -s pimachine -t ABCDEFG -l 10 -i "C:\Playlists" -x -l -f "C:/Users/MrSilver/Music/iTunes/iTunes Media/Music" -r "/home/pi/music" -d
 
-ListPorter --server pimachine --token ABCDEFG --library 10 --import "C:\Playlists" --linux --find "C:/Users/MrSilver/Music/iTunes/iTunes Media/Music" --replace "/home/pi/music" --delete
+ListPorter --server pimachine --token ABCDEFG --library 10 --import "C:\Playlists" --exact-only --linux --find "C:/Users/MrSilver/Music/iTunes/iTunes Media/Music" --replace "/home/pi/music" --delete
 ```
-* Connect to Plex Server running at `pimachine`
-* Use Plex token `ABCDEFG`
-* Use music library ID `10`
-* Import all playlists found in `C:\Playlists`
-* Disable fuzzy matching
-* Replace Windows backslashes (`\`) in the playlist path to forward slashes (`/`)
-* Replace `C:\Users\MrSilver\Music\iTunes\iTunes Media\Music` in the playlist paths to `/home/pi/music`
-* Delete all playlists on Plex first before importing
-
-> [!IMPORTANT]
-> When using `--linux` or `--windows`, path slashes are converted before any `--find` and `--replace` operations. Make sure your `--find` string reflects the adjusted slash style. In the example above, backslashes are converted to `/`, so `--find` must also use forward slashes (`/`).
 
 ## 💻 Command line options
+
+ListPorter is a command-line tool. Run it from a terminal or command prompt, supplying all options and arguments directly on the command line. Logs with detailed information are also written and you can find the log file location using `--help` (`-h`).
 
 ```
 ListPorter -s <address>[:<port>] -t <token> -l <library> -i <path> [options]
