@@ -52,7 +52,7 @@ Each release includes the following files (`x.x.x` denotes the version number):
   
 ## 🚀 Quick start guide
 
-This is the simplest and most common way to use ListPorter. It works across platforms and uses fuzzy matching to automatically align playlist paths with your Plex library. By using `--mirror` (`-m`), it also ensures Plex contains the exact same playlists as your export folder - removing any that aren't found there from Plex.
+**This is the simplest and most common way to use ListPorter.** It works across platforms and uses fuzzy matching to automatically align playlist paths with your Plex library. By using `--mirror` (`-m`), it also ensures Plex contains the exact same playlists as your export folder - removing any that aren't found there from Plex.
 
 >[!NOTE]
 >Using `--mirror` (`-m`) will delete Plex playlists that are not present in your import folder.
