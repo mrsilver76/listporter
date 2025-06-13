@@ -120,7 +120,7 @@ ListPorter -s <address>[:<port>] -t <token> -l <library> -i <path> [options]
 
 #### Path rewriting options
 
-ListPorter tries to match each file path in your playlist with the paths Plex has stored. It first attempts an exact match. If that fails, it automatically uses fuzzy matching, based on the assumption that music files are organised with a structure of `artist/album/track`. It compares only the last three parts of each path, ignoring drive letters, shares, or deeper folder structures.
+ListPorter tries to match each file path in your playlist with the paths Plex has stored. It first attempts an exact match. If that fails, it automatically uses fuzzy matching, based on the assumption that music files are organised with a structure of `artist/album/track` or `artist\album\track`. It compares only the last three parts of each path, ignoring drive letters, shares, or deeper folder structures.
 
 This approach works well when root paths differ or when file systems vary across devices, as long as the layout near the file itself is consistent. However, if files have been renamed or stored with a different folder hierarchy, exact or fuzzy matching may fail.
 
@@ -198,7 +198,7 @@ However you can enable this with a couple of steps:
 7. Once Plex Playlist Updater has finished running, the pop-up window will close automatically.
 
 ### Why do I see a warning that some items failed to match the Plex database?
-This warning appears when ListPorter can’t link some playlist items to Plex tracks because their file paths don’t align closely enough. Although ListPorter uses automatic fuzzy matching (assuming the path ends `artist/album/track`) it will fail if these components differ substantially or are absent.
+This warning appears when ListPorter can’t link some playlist items to Plex tracks because their file paths don’t align closely enough. Although ListPorter uses automatic fuzzy matching (assuming the path ends `artist/album/track` or `artist\album\track`) it will fail if these components differ substantially or are absent.
 
 In the situation where fuzzy matching is not working, you can use `--find`, `--replace`, `--unix`, `--windows` and `--base-path` to help rewrite your playlist tracks into a path that Plex can recognise.
 
