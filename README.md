@@ -52,15 +52,15 @@ Each release includes the following files (`x.x.x` denotes the version number):
   
 ## 🚀 Quick start guide
 
-**This is the simplest and most common way to use ListPorter.** It works across platforms and uses fuzzy matching to automatically align playlist paths with your Plex library. By using `--mirror` (`-m`), it also ensures Plex contains the exact same playlists as your export folder - removing any that aren't found there from Plex.
+**This is the simplest and most common way to use ListPorter.** It works across platforms and uses fuzzy matching to automatically align playlist paths with your Plex library.
 
->[!NOTE]
->Using `--mirror` (`-m`) will delete Plex playlists that are not present in your import folder.
+>[!TIP]
+>To ensure Plex contains only the playlists in your import folder (i.e. remove any that aren’t there), add the `--mirror` (`-m`) option.
 
 ```
-ListPorter -s 127.0.0.1 -t ABCDEFG -l 8 -i "C:\Playlists" -m
+ListPorter -s 127.0.0.1 -t ABCDEFG -l 8 -i "C:\Playlists"
 
-ListPorter --server 127.0.0.1 --token ABCDEFG --library 8 --import "C:\Playlists" --mirror
+ListPorter --server 127.0.0.1 --token ABCDEFG --library 8 --import "C:\Playlists"
 ```
 
 The example below shows a more advanced scenario suitable when fuzzy matching isn’t enough. It demonstrates how to explicitly rewrite paths and convert formats when importing playlists created on one platform (e.g. Windows) into a Plex server running on another (e.g. Linux).
