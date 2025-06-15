@@ -282,6 +282,9 @@ ListPorter currently meets the needs it was designed for, and no major new featu
 - Replaced `Publish.bat` with a streamlined `Publish.ps1` script for building executables.
 - Added `linux-arm` builds for compatibility with Raspberry Pi 3 devices.
 - Added additional logging to aid in debugging.
+- Added statistics showing playlists skipped, created, updated and deleted.
+- Fixed bug where a folder with no m3u or m3u8 files would not generate an appropriate error.
+- Made output less spammy whilst loading and parsing m3u files. 
 - Added GNU GPL v2 license notice to source files for clarity.
 
 ### 0.9.3 (24 May 2025)

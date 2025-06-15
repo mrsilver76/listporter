@@ -50,22 +50,30 @@ namespace ListPorter
         // User preferences, changed through the command line
         public static string plexHost = "127.0.0.1"; // IP address of the Plex server
         public static int plexPort = 32400; // Port of the Plex server
+        public static bool usingSecureConnection = false; // Whether to use HTTPS for the connection
         public static string plexToken = ""; // Plex token for authentication
         public static int plexLibrary = -1; // Library ID to use
         public static string pathToImport = ""; // Path to import M3U files
         public static bool deleteAll = false; // Delete all playlists before importing
         public static bool mirrorPlaylists = false; // Mirror playlists
-        public static string findText = ""; // Text to find in file paths
-        public static string replaceText = ""; // Text to replace in file paths
         public static bool verboseMode = false; // Output verbose messages (API calls and lookup results)
         public static int totalImportErrors = 0;  // Total number of import errors
+        public static int totalPlaylistsCreated = 0; // Total number of playlists created
+        public static int totalPlaylistsUpdated = 0; // Total number of playlists updated
+        public static int totalPlaylistsDeleted = 0; // Total number of playlists deleted
+        public static int totalPlaylistsSkipped = 0; // Total number of playlists skipped
+
+        // Path re-writing options
         public enum PathStyle
         {
             Auto, // Do nothing
             ForceWindows, // Replace slashes with backslashes
             ForceLinux // Replace backslashes with slashes
         }
+        public static string findText = ""; // Text to find in file paths
+        public static string replaceText = ""; // Text to replace in file paths
         public static PathStyle pathStyle = PathStyle.Auto; // By default, do nothing
+        public static string basePath = "";  // Base path for use with relative paths
 
         // Internal globals
         public static List<string> M3UFilesToImport = new List<string>(); // List of m3u files to process
@@ -77,6 +85,12 @@ namespace ListPorter
         public static List<TrackInfo> plexTrackList = new List<TrackInfo>(); // List of all audio tracks in the Plex library
         public static List<TrackInfo> importedPlaylist = new List<TrackInfo>(); // List of tracks in the imported playlist
         public static List<plexPlaylist> plexPlaylistList = new List<plexPlaylist>(); // List of playlists fetched from Plex
+
+        // This is used to store fuzzy paths that we can use to match against the Plex library
+        public static Dictionary<string, long> fuzzyPathMap = new();
+        public static bool useFuzzyMatching = true; // Whether to use fuzzy matching. Turned off if any path rewriting options are used.
+        private static readonly char[] PathSeparators = ['/', '\\'];  // Used to avoid CA1861 warnings
+        public static bool usingPathRewriting = false; // Whether path rewriting options (find/replace or unix/windows) are in use
 
         static void Main(string[] args)
         {
@@ -108,6 +122,9 @@ namespace ListPorter
             // Fetch and store all tracks from the Plex library
             FetchAndStoreTracks();
 
+            // Build fuzzy path map if fuzzy matching is enabled
+            BuildFuzzyPathMap();
+
             // Fetch and store all playlists from Plex
 
             // We're going to display a status update here because if we put this inside the method then
@@ -118,6 +135,11 @@ namespace ListPorter
 
             // Find M3U/M3U8 files to import from the specified directory
             FindM3UToImport(pathToImport);
+            if (M3UFilesToImport.Count == 0)
+            {
+                Logger($"Could not find any m3u or m3u8 files to import in: {pathToImport}");
+                System.Environment.Exit(0);
+            }
 
             // Delete all playlists in Plex if the option is enabled
             if (deleteAll)
@@ -133,6 +155,7 @@ namespace ListPorter
 
 
             // Finished
+            Logger($"Playlist statistics: {totalPlaylistsSkipped} skipped, {totalPlaylistsCreated} created, {totalPlaylistsUpdated} updated and {totalPlaylistsDeleted} deleted.");
             Logger($"ListPorter finished.");
 
             if (totalImportErrors > 0)
@@ -141,18 +164,24 @@ namespace ListPorter
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine($" ⚠️ Warning: {Pluralise(totalImportErrors, "track", "tracks")} couldn't be found in the Plex database!");
                 Console.ResetColor();
-                if (string.IsNullOrEmpty(findText) && string.IsNullOrEmpty(replaceText))
-                {
-                    Console.WriteLine("    This usually means the file paths in your playlist don't match what Plex has stored.");
-                    Console.WriteLine("    Try using the --find and --replace options to adjust parts of the path. You may");
-                    Console.WriteLine("    also need to use --unix or --windows to convert paths between operating systems.");
-                }
-                else
+
+                if (usingPathRewriting)
                 {
                     Console.WriteLine("    You've already used path rewriting options, but files still couldn’t be found.");
                     Console.WriteLine("    Double-check that your --find/--replace or --unix/--windows arguments match");
                     Console.WriteLine("    how Plex has stored the actual file paths.");
                 }
+                else if (!useFuzzyMatching)
+                {
+                    Console.WriteLine("    Fuzzy matching was disabled. Check the log for details why.");
+                    Console.WriteLine("    You can try using --find/--replace or --unix/--windows options to rewrite paths.");
+                }
+                else
+                {
+                    Console.WriteLine("    Some tracks couldn't be matched, even with fuzzy logic.");
+                    Console.WriteLine("    Use --find/--replace or --unix/--windows to rewrite paths and improve matching.");
+                }
+
                 Console.WriteLine();
                 Console.WriteLine("    See the README for help: https://github.com/mrsilver76/listporter");
             }
@@ -166,7 +195,6 @@ namespace ListPorter
         /// and stores the details in the static list `plexPlaylist.plexPlaylistList`.
         /// Only playlists with all tracks in the specified Plex library are included.
         /// </summary>
-
         public static void FetchAndStorePlaylists()
         {
             plexPlaylistList.Clear();
@@ -308,13 +336,19 @@ namespace ListPorter
         /// <param name="body">Optional request body for POST or PUT requests.</param>
         /// <returns>The response content as a string.</returns>
         /// <exception cref="Exception">Thrown if the HTTP request fails.</exception>
-
         public static string GetHttpResponse(HttpMethod method, string urlPath, string? body = null)
         {
-            using (HttpClient httpClient = new HttpClient())
+            // Bypass SSL certificate validation for self-signed certificates
+            var handler = new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
+            };
+
+            using (HttpClient httpClient = new HttpClient(handler))
             {
                 // Construct the full URL
-                string fullUrl = $"http://{plexHost}:{plexPort}{urlPath}";
+                string scheme = usingSecureConnection ? "https" : "http";
+                string fullUrl = $"{scheme}://{plexHost}:{plexPort}{urlPath}";
 
                 // Create the HttpRequestMessage
                 var request = new HttpRequestMessage(method, fullUrl);
@@ -368,7 +402,7 @@ namespace ListPorter
                 return false;
             }
 
-            Logger($"Loading playlist: {filePath}");
+            Logger($"Loading playlist: {filePath}", true);
 
             var lines = File.ReadAllLines(filePath);
             bool playlistTitleFound = false;
@@ -397,9 +431,9 @@ namespace ListPorter
                     if (ratingKey == -1)
                     {
                         if (rewrittenLine == line)
-                            Logger($"No match found in Plex library {plexLibrary} for path '{line}'", verbosity);
+                            Logger($"No match found in Plex library {plexLibrary} for path '{line}' in: {filePath}", verbosity);
                         else
-                            Logger($"No match found in Plex library {plexLibrary} for path '{rewrittenLine}' (tranformed from '{line}')", verbosity);
+                            Logger($"No match found in Plex library {plexLibrary} for path '{rewrittenLine}' (tranformed from '{line}') in: {filePath}", verbosity);
 
                         failed++;
                         playlistImportErrors++;
@@ -485,23 +519,115 @@ namespace ListPorter
             if (!string.IsNullOrEmpty(findText))
                 newPath = newPath.Replace(findText, replaceText, StringComparison.CurrentCultureIgnoreCase);
 
+            // If basePath is set, ensure the path is relative to it
+            if (!string.IsNullOrEmpty(basePath))
+            {
+                // Remove the . from the beginning of the path
+                if (newPath.StartsWith('.'))
+                    newPath = newPath[1..];
+                // Blindly prepend the base-path, it'll be up the user to correctly set path seperators
+                newPath = basePath + newPath;
+
+            }
+
             return newPath;
+        }
+
+        /// <summary>
+        /// Builds a fuzzy path map for Plex library tracks, allowing for fast case-insensitive matching of
+        /// the last three parts of a file path - which is typically artist/album/song.
+        /// </summary>
+        public static void BuildFuzzyPathMap()
+        {
+            if (!useFuzzyMatching)
+            {
+                Logger("Fuzzy path matching is disabled.");
+                return;
+            }
+ 
+            Logger("Building fuzzy path map...");
+
+            fuzzyPathMap.Clear();
+
+            foreach (var track in plexTrackList)
+            {
+                var parts = track.filePath.Split(PathSeparators, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length < 3)
+                {
+                    Logger($"Skipping track with insufficient path parts: {track.filePath}", true);
+                    continue;
+                }
+
+                var key = string.Join("|", parts[^3..]).ToLowerInvariant();
+
+                // Check if the key already exists in the map
+                if (fuzzyPathMap.TryGetValue(key, out var existingKey))
+                {
+                    // If the existing key is different, we have a conflict
+                    if (existingKey != track.ratingKey)
+                    {
+                        // Log the conflict and disable fuzzy matching
+                        Logger($"Fuzzy match conflict: key [{key}] maps to multiple ratingKeys. Disabling fuzzy matching!");
+                        fuzzyPathMap.Clear(); // Prevent partial usage
+                        useFuzzyMatching = false;
+                        return;
+                    }
+                    // The existing key is the same, so it's not an issue
+                    Logger($"Odd. Fuzzy match already exists for key [{key}] with ratingKey {existingKey}.", true);
+                    continue;
+                }
+
+                fuzzyPathMap[key] = track.ratingKey;
+            }
+
+            Logger($"Fuzzy path map built with {fuzzyPathMap.Count} entries", true);
         }
 
 
         /// <summary>
         /// Finds the Plex `ratingKey` of a track by matching a file path with the entries 
-        /// in `TrackInfo.plexTrackList`. Matches are case-insensitive.
+        /// in `TrackInfo.plexTrackList`. Matches are case-insensitive. If an exact match
+        /// is not found then fuzzy matching is attempted by taking the last three parts of the file path.
+        /// This only happens if `useFuzzyMatching` is true, which is the default unless
+        /// file path rewriting options are used (e.g., --find, --replace, --unix, --windows).
         /// </summary>
         /// <param name="filePath">The full file path to search for.</param>
         /// <returns>The ratingKey of the matching track, or -1 if no match is found.</returns>
+        /// 
         public static long GetRatingKeyFromFilePath(string filePath)
         {
-            var match = plexTrackList.FirstOrDefault(track => string.Equals(track.filePath, filePath, StringComparison.OrdinalIgnoreCase));
+            // First just try to find an exact (case-insensitive) match in the plexTrackList
 
-            return match?.ratingKey ?? -1;
+            var match = plexTrackList.FirstOrDefault(track =>
+                string.Equals(track.filePath, filePath, StringComparison.OrdinalIgnoreCase));
+
+            // We found a match!
+            if (match != null)
+                return match.ratingKey;
+
+            // If we aren't using fuzzy matching then return -1 as we cannot find the track
+            if (!useFuzzyMatching)
+                return -1;
+
+            // If we reach here, we will try fuzzy matching
+
+            var parts = filePath.Split(PathSeparators, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length < 3)
+            {
+                Logger($"Fuzzy match skipped: path too short: {filePath}", true);
+                return -1;
+            }
+
+            var fuzzyKey = string.Join("|", parts[^3..]).ToLowerInvariant();
+            if (verboseMode)
+                Logger($"Attempting fuzzy match on: {fuzzyKey}", true);
+
+            if (fuzzyPathMap.TryGetValue(fuzzyKey, out var ratingKey))
+                return ratingKey;
+
+            return -1;
         }
-
+        
         /// <summary>
         /// Creates a new Plex playlist with the specified title.
         /// </summary>
@@ -585,16 +711,6 @@ namespace ListPorter
 
             // Log the number of requests made (log to text file only)
             Logger($"Sent {Pluralise(requests, "HTTP request", "HTTP requests")} to Plex to add tracks to playlist.", true);
-        }
-
-        /// <summary>
-        /// Clears all items from a Plex playlist.
-        /// </summary>
-        public static void ClearPlaylist(long ratingKey)
-        {
-            string clearPlaylistUrl = $"/playlists/{ratingKey}/items";
-            GetHttpResponse(HttpMethod.Delete, clearPlaylistUrl);
-            Logger($"Cleared all items from playlist {ratingKey}.");
         }
 
         /// <summary>
@@ -701,6 +817,8 @@ namespace ListPorter
         /// <param name="m3uFilePath">The full path to the m3u file to process.</param>
         public static void ProcessPlaylist(string m3uFilePath)
         {
+            bool wasCreated = false; // Flag to track if the playlist was created
+
             // Step 1: Load the m3u playlist into the importedPlaylist
             bool result = LoadM3UPlaylist(m3uFilePath);
             if (result == false)
@@ -719,6 +837,7 @@ namespace ListPorter
                     return;
                 }
                 Logger($"Created playlist on Plex: {importedPlaylistTitle}");
+                wasCreated = true; // Mark as created
             }
             else
             {
@@ -727,6 +846,7 @@ namespace ListPorter
                 {
                     Logger($"Playlist already up-to-date: {importedPlaylistTitle}");
                     processedPlaylistTitles.Add(importedPlaylistTitle); // Add to processed list
+                    totalPlaylistsSkipped++; // Increment the skipped playlist counter
                     return;
                 }
                 // Content isn't identical, so easier approach is to just remove everything
@@ -735,9 +855,16 @@ namespace ListPorter
             }
 
             // Step 4: Update the playlist content on Plex
-            Logger($"Adding {Pluralise(importedPlaylist.Count, "item", "items")} to playlist: {importedPlaylistTitle}");
+            if (wasCreated)
+                Logger($"Adding {Pluralise(importedPlaylist.Count, "item", "items")} to playlist: {importedPlaylistTitle}");
+            else
+                Logger($"Updating {Pluralise(importedPlaylist.Count, "item", "items")} in playlist: {importedPlaylistTitle}");
             AddTracksToPlaylist(ratingKey);
             processedPlaylistTitles.Add(importedPlaylistTitle); // Add to processed list
+            if (wasCreated)
+                totalPlaylistsCreated++; // Increment the created playlist counter
+            else
+                totalPlaylistsUpdated++; // Increment the updated playlist counter
 
             // Step 5: Refresh the Plex playlist list to ensure consistency
             FetchAndStorePlaylists();
@@ -775,12 +902,18 @@ namespace ListPorter
 
             // Step 4: Compare counts
             if (plexRatingKeys.Count != importedRatingKeys.Count)
+            {
+                Logger($"Playlist '{importedPlaylistTitle}' will be updated - {plexRatingKeys.Count} on Plex vs {importedRatingKeys.Count} in import.", true);
                 return false;
+            }
 
             // Step 5: Compare order
             for (int i = 0; i < importedRatingKeys.Count; i++)
                 if (plexRatingKeys[i] != importedRatingKeys[i])
+                {
+                    Logger($"Playlist '{importedPlaylistTitle}' will be updated - ratingKeys differ at index {i}: Plex={plexRatingKeys[i]}, Import={importedRatingKeys[i]}", true);
                     return false;
+                }
 
             // If all checks passed, the playlists are identical
             return true;
@@ -824,8 +957,7 @@ namespace ListPorter
                     Logger($"Missing machine identifier in output: {responseContent}", true);
                     return false;
                 }
-
-                Logger($"Successfully connected to Plex server at {plexHost} port {plexPort}.");
+                Logger($"Successfully connected to Plex server at {plexHost} port {plexPort} using {(usingSecureConnection ? "secure HTTPS" : "HTTP")}.");
                 Logger($"machineIdentifer is {identifier.Length} characters long. First four are: {identifier[..Math.Min(identifier.Length, 4)]}", true);
                 machineIdentifier = identifier;
                 return true;
@@ -846,7 +978,8 @@ namespace ListPorter
                 }
                 else if (ex.Message.Contains("forcibly closed by the remote host"))
                 {
-                    Logger("Possible cause: Plex is set to require secure connections, change to \"prefer\" instead.");
+                    Logger($"Possible cause: Plex may require HTTPS connections. Try using --server https://{plexHost}");
+                    Logger("or change your \"Secure Connections\" setting to \"Prefer\" instead.");
                     Logger("More info: https://support.plex.tv/articles/200430283-network/");
                 }
                 else
@@ -920,6 +1053,7 @@ namespace ListPorter
             finally
             {
                 Logger($"Deleted playlist with ratingKey {ratingKey} from Plex.", true);
+                totalPlaylistsDeleted++;
             }
         }
     }

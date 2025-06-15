@@ -44,12 +44,28 @@ namespace ListPorter
                     DisplayUsage();
                 else if (arg == "-s" || arg == "--server" && i + 1 < args.Length)
                 {
-                    string[] bits = args[i + 1].Split(':');
-                    if (bits.Length == 1)
+                    string serverArg = args[i + 1];
+                    i++; // Skip next argument as it's the value
+                    if (serverArg.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
                     {
-                        // We've only been provided with the host
-                        plexHost = args[i + 1];
+                        usingSecureConnection = true;
+                        serverArg = serverArg.Substring("https://".Length);
                     }
+                    else if (serverArg.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
+                    {
+                        usingSecureConnection = false;
+                        serverArg = serverArg.Substring("http://".Length);
+                    }
+                    else
+                    {
+                        // Default to false or your current default
+                        usingSecureConnection = false;
+                    }
+                    // Now split on ':'
+                    string[] bits = serverArg.Split(':');
+
+                    if (bits.Length == 1)
+                        plexHost = bits[0];
                     else if (bits.Length == 2)
                     {
                         plexHost = bits[0];
@@ -59,7 +75,9 @@ namespace ListPorter
                             DisplayUsage($"Invalid Plex port ({bits[1]})");
                     }
                     else
-                        DisplayUsage($"Invalid format of Plex host and port ({args[i + 1]})");
+                    {
+                        DisplayUsage($"Invalid format of Plex host and port ({serverArg})");
+                    }
                 }
                 else if (arg == "-t" || arg == "--token" && i + 1 < args.Length)
                 {
@@ -83,6 +101,11 @@ namespace ListPorter
                     pathToImport = args[i + 1];
                     i++;
                 }
+                else if (arg == "-b" || arg == "--base-path" && i + 1 < args.Length)
+                {
+                    basePath = args[i + 1];
+                    i++;
+                }
                 else if (arg == "-d" || arg == "--delete-all")
                     deleteAll = true;
                 else if (arg == "-m" || arg == "--mirror")
@@ -103,6 +126,8 @@ namespace ListPorter
                     pathStyle = PathStyle.ForceWindows;
                 else if (arg == "-v" || arg == "--verbose")
                     verboseMode = true;
+                else if (arg == "-x" || arg == "--exact-only")  // Disable fuzzy matching
+                    useFuzzyMatching = false;
                 else if (arg[0] == '/' || arg[0] == '-')
                     DisplayUsage($"Unknown option: {arg}");
             }
@@ -124,6 +149,14 @@ namespace ListPorter
             if (pathToImport != null && !Directory.Exists(pathToImport) && !File.Exists(pathToImport))
                 DisplayUsage($"Path to import does not exist ({pathToImport})");
 
+            // If path rewriting is enabled, turn off fuzzy path matching
+
+            if (!string.IsNullOrEmpty(findText) || pathStyle != PathStyle.Auto || !string.IsNullOrEmpty(basePath))
+            {
+                usingPathRewriting = true;
+                useFuzzyMatching = false;
+                Logger("Path rewriting enabled, fuzzy path matching is disabled.", true);
+            }
         }
 
         /// <summary>
@@ -158,6 +191,8 @@ namespace ListPorter
                                 "                                      (for Plex servers running on Windows)\n" +
                                 "    -f, --find <text>                 Find text within the song path.\n" +
                                 "    -r, --replace <text>              Replace found text in song path with <text>.\n" +
+                                "    -b, --base-path <path>            Base path to use for relative song paths.\n" +
+                                "    -x, --exact-only                  Disable fuzzy path matching. Exact matches only.\n" +
                                 "\n" +
                                 "  Other options:\n" +
                                 "    -v, --verbose                     Verbose output to log files.\n" +
