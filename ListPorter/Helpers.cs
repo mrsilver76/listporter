@@ -1,4 +1,22 @@
-﻿using System.Reflection;
+﻿/*
+ * ListPorter - Upload standard or extended .m3u playlist files to Plex Media Server.
+ * Copyright (C) 2020-2025 Richard Lawrence
+ * 
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, see
+ * < https://www.gnu.org/licenses/>.
+ */
+
 using IniParser;
 using IniParser.Model;
 using System.Text.RegularExpressions;
@@ -26,12 +44,28 @@ namespace ListPorter
                     DisplayUsage();
                 else if (arg == "-s" || arg == "--server" && i + 1 < args.Length)
                 {
-                    string[] bits = args[i + 1].Split(':');
-                    if (bits.Length == 1)
+                    string serverArg = args[i + 1];
+                    i++; // Skip next argument as it's the value
+                    if (serverArg.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
                     {
-                        // We've only been provided with the host
-                        plexHost = args[i + 1];
+                        usingSecureConnection = true;
+                        serverArg = serverArg.Substring("https://".Length);
                     }
+                    else if (serverArg.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
+                    {
+                        usingSecureConnection = false;
+                        serverArg = serverArg.Substring("http://".Length);
+                    }
+                    else
+                    {
+                        // Default to false or your current default
+                        usingSecureConnection = false;
+                    }
+                    // Now split on ':'
+                    string[] bits = serverArg.Split(':');
+
+                    if (bits.Length == 1)
+                        plexHost = bits[0];
                     else if (bits.Length == 2)
                     {
                         plexHost = bits[0];
@@ -41,7 +75,9 @@ namespace ListPorter
                             DisplayUsage($"Invalid Plex port ({bits[1]})");
                     }
                     else
-                        DisplayUsage($"Invalid format of Plex host and port ({args[i + 1]})");
+                    {
+                        DisplayUsage($"Invalid format of Plex host and port ({serverArg})");
+                    }
                 }
                 else if (arg == "-t" || arg == "--token" && i + 1 < args.Length)
                 {
@@ -65,6 +101,11 @@ namespace ListPorter
                     pathToImport = args[i + 1];
                     i++;
                 }
+                else if (arg == "-b" || arg == "--base-path" && i + 1 < args.Length)
+                {
+                    basePath = args[i + 1];
+                    i++;
+                }
                 else if (arg == "-d" || arg == "--delete-all")
                     deleteAll = true;
                 else if (arg == "-m" || arg == "--mirror")
@@ -79,12 +120,14 @@ namespace ListPorter
                     replaceText = args[i + 1];
                     i++;
                 }
-                else if (arg == "-u" || arg == "--unix")
+                else if (arg == "-u" || arg == "--unix" || arg == "--linux")  // Allow --linux as an alias for --unix
                     pathStyle = PathStyle.ForceLinux;
                 else if (arg == "-w" || arg == "--windows")
                     pathStyle = PathStyle.ForceWindows;
                 else if (arg == "-v" || arg == "--verbose")
                     verboseMode = true;
+                else if (arg == "-x" || arg == "--exact-only")  // Disable fuzzy matching
+                    useFuzzyMatching = false;
                 else if (arg[0] == '/' || arg[0] == '-')
                     DisplayUsage($"Unknown option: {arg}");
             }
@@ -106,6 +149,14 @@ namespace ListPorter
             if (pathToImport != null && !Directory.Exists(pathToImport) && !File.Exists(pathToImport))
                 DisplayUsage($"Path to import does not exist ({pathToImport})");
 
+            // If path rewriting is enabled, turn off fuzzy path matching
+
+            if (!string.IsNullOrEmpty(findText) || pathStyle != PathStyle.Auto || !string.IsNullOrEmpty(basePath))
+            {
+                usingPathRewriting = true;
+                useFuzzyMatching = false;
+                Logger("Path rewriting enabled, fuzzy path matching is disabled.", true);
+            }
         }
 
         /// <summary>
@@ -123,28 +174,36 @@ namespace ListPorter
                                     "Music & multimedia icon by paonkz - Flaticon (https://www.flaticon.com/free-icons/music-and-multimedia)\n");
 
             Console.WriteLine("Mandatory arguments:\n" +
-                                "   -s, --server <address>[:<port>]    Plex server address (with optional port)\n" +
+                                "   -s, --server <address>[:<port>]    Plex server address.\n" +
+                                "                                      Add https:// for secure connection.\n" +
+                                "                                      (port is optional, defaults to 32400).\n" +
                                 "   -t, --token <token>                Plex authentication token.\n" +
                                 "   -l, --library <library>            Plex library ID to use.\n" +
                                 "   -i, --import <path>                Path to a playlist file or directory.\n\n" +
                                 "Optional arguments:\n" +
                                 "  Playlist sync options:\n" +
-                                "    -d, --delete                      Delete all playlists from Plex library on start.\n" +
-                                "    -m, --mirror                      Mirror Plex library to match playlists provided.\n" +
+                                "    -d, --delete                      Delete all playlists from library on start.\n" +
+                                "    -m, --mirror                      Mirror Plex library to match playlists.\n" +
                                 "\n" +
                                 "  Path rewriting options:\n" +
-                                "    -u, --unix                        Force forward slashes in song paths, for Linux Plex servers.\n" +
-                                "    -w, --windows                     Force backslashes in song paths, for Windows Plex servers.\n" +
+                                "    -u, --unix                        Force forward slashes in song paths.\n" +
+                                "                                      (for Plex servers running on Linux)\n" +
+                                "    -w, --windows                     Force backslashes in song paths.\n" +
+                                "                                      (for Plex servers running on Windows)\n" +
                                 "    -f, --find <text>                 Find text within the song path.\n" +
                                 "    -r, --replace <text>              Replace found text in song path with <text>.\n" +
+                                "    -b, --base-path <path>            Base path to use for relative song paths.\n" +
+                                "    -x, --exact-only                  Disable fuzzy path matching. Exact matches only.\n" +
                                 "\n" +
                                 "  Other options:\n" +
                                 "    -v, --verbose                     Verbose output to log files.\n" +
+                                "    -h, --help                        Show help message and log file location.\n" +
                                 "\n" +
-                               $"Logs are written to {Path.Combine(appDataPath, "Logs")}\n");
+                               $"Logs are written to {Path.Combine(appDataPath, "Logs")}");
 
             if (!string.IsNullOrEmpty(errorMessage))
             {
+                Console.WriteLine();
                 Console.WriteLine($"Error: {errorMessage}");
                 Environment.Exit(-1);
             }
@@ -393,9 +452,7 @@ namespace ListPorter
 
             // Append `-preX` if build is greater than 0
             if (netVersion.Build > 0)
-            {
                 result += $"-pre{netVersion.Build}";
-            }
 
             return result;
         }
