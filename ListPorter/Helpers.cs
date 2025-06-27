@@ -175,6 +175,7 @@ namespace ListPorter
 
             Console.WriteLine("Mandatory arguments:\n" +
                                 "   -s, --server <address>[:<port>]    Plex server address.\n" +
+                                "                                      Add https:// for secure connection.\n" +
                                 "                                      (port is optional, defaults to 32400).\n" +
                                 "   -t, --token <token>                Plex authentication token.\n" +
                                 "   -l, --library <library>            Plex library ID to use.\n" +
@@ -196,6 +197,7 @@ namespace ListPorter
                                 "\n" +
                                 "  Other options:\n" +
                                 "    -v, --verbose                     Verbose output to log files.\n" +
+                                "    -h, --help                        Show help message and log file location.\n" +
                                 "\n" +
                                $"Logs are written to {Path.Combine(appDataPath, "Logs")}");
 
@@ -450,9 +452,7 @@ namespace ListPorter
 
             // Append `-preX` if build is greater than 0
             if (netVersion.Build > 0)
-            {
                 result += $"-pre{netVersion.Build}";
-            }
 
             return result;
         }
