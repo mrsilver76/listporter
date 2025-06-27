@@ -109,11 +109,13 @@ ListPorter -s <address>[:<port>] -t <token> -l <library> -i <path> [options]
   
 #### Playlist sync options
 
+These options will remove playlists from your Plex server under specific conditions. Only playlists that are manual (not smart/dynamic), contain audio tracks only and belong entirely to the music library specified by `--library` will ever be deleted. No other content (such as music files, metadata or non-matching playlists) is modified or removed..
+
 - **`-d`, `--delete`**   
-  Deletes all existing playlists in the specified Plex music library before importing any new ones. Only audio playlists that are manual and entirely within the specified library are affected.
+  Deletes all existing playlists in the specified Plex music library before importing any new ones.
 
 - **`-m`, `--mirror`**   
-  Mirrors Plex playlists to match the imported `.m3u` files. Any Plex playlists not represented in the imported list will be removed. Only audio playlists that are manual and entirely within the specified library are affected.
+  Mirrors Plex playlists to match the imported `.m3u` files. Any Plex playlists not represented in the imported list will be removed. 
 
 > [!CAUTION]
 > Be careful when using `--mirror` with a single file: this will cause all other playlists in the library to be removed, keeping only the one you provided.
