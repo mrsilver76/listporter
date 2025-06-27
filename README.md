@@ -271,7 +271,7 @@ ListPorter currently meets the needs it was designed for, and no major new featu
 
 ## 🕰️ Version history
 
-### 1.0.0 (tbc)
+### 1.0.0 (27 June 2025)
 - 🏁 Declared as the first stable release.
 - Added fuzzy matching logic to improve playlist-to-Plex track matching when exact paths don’t align.
 - Added support for secure connections (HTTPS) when communicating with Plex servers.
