@@ -25,31 +25,45 @@ Get the latest version from https://github.com/mrsilver76/listporter/releases.
 
 Each release includes the following files (`x.x.x` denotes the version number):
 
-|Filename|Description|
+|Platform|Download|
 |:--------|:-----------|
-|`ListPorter-x.x.x-win-x64.exe`|✅ For Microsoft Windows 10 and 11 ⬅️ **Most users should choose this**
-|`ListPorter-x.x.x-linux-x64`|For Linux on Intel/AMD CPUs|
-| `ListPorter-x.x.x-linux-arm64` | For Linux on 64-bit ARM devices (e.g. Raspberry Pi 4, ARM servers) |
-| `ListPorter-x.x.x-linux-arm` | For Linux on 32-bit ARM devices (e.g. Raspberry Pi 3 and earlier) |
-|`ListPorter-x.x.x-osx-arm64`|For macOS on Apple Silicon (eg. M1 and newer)|
-|`ListPorter-x.x.x-osx-x64`|For macOS on Intel-based Macs (pre-Apple Silicon)|
-|Source code (zip)|ZIP archive of the source code|
-|Source code (tar.gz)|TAR.GZ archive of the source code|
+|Microsoft Windows 10 & 11|`ListPorter-x.x.x-win-x64.exe` ✅ **Most users should choose this**|
+|Linux (64-bit Intel/AMD)|`ListPorter-x.x.x-linux-x64`|
+|Linux (64-bit ARM), e.g. Pi 4 and newer|`ListPorter-x.x.x-linux-arm64`|
+|Linux (32-bit ARM), e.g. Pi 3 and older|`ListPorter-x.x.x-linux-arm`|
+|Synology DSM|`ListPorter-x.x.x-linux-x64` 📦 Run via Docker / Container Manager|
+|macOS (Apple Silicon)|`ListPorter-x.x.x-osx-arm64`|
+|macOS (Intel)|`ListPorter-x.x.x-osx-x64`|
+|Other/Developers|Source code (zip / tar.gz)|
 
 > [!TIP]
-> There is no installer. Just download the appropriate file and run it from the command line.
+> There is no installer for native platforms. Just download the appropriate file and run it from the command line. If you're using Docker (e.g. on Synology), setup will differ - see notes below.
 
 ### Linux/macOS users
 
-* You will need to install the [.NET 8.0 runtime](https://dotnet.microsoft.com/en-us/download/dotnet/8.0/runtime).
-* Don't forget to make the file executable: `chmod +x ListPorter-x.x.x-<your-platform>`
+- Download the appropriate binary for your platform (see table above).
+- Install the [.NET 8.0 runtime](https://learn.microsoft.com/en-gb/dotnet/core/install/linux?WT.mc_id=dotnet-35129-website).
+- ⚠️ Do not install the SDK, ASP.NET Core Runtime, or Desktop Runtime.
+- Make the downloaded file executable: `chmod +x ListPorter-x.x.x-<your-platform>`
+
+### Synology DSM users
+
+- Only Plus-series models (e.g. DS918+, DS920+) support Docker/Container Manager. Value and J-series models cannot run ListPorter this way.
+- For DSM 7.2+, use Container Manager; older versions use the Docker package.
+- Install the [.NET 8.0 runtime](https://learn.microsoft.com/en-gb/dotnet/core/install/linux?WT.mc_id=dotnet-35129-website) inside the container or use a [.NET container image](https://learn.microsoft.com/en-gb/dotnet/core/docker/introduction#net-images).
+- ⚠️ Do not install the SDK, ASP.NET Core Runtime, or Desktop Runtime.
+- Use the `ListPorter-x.x.x-linux-x64` binary inside the container.
+- Mount your playlist folder into the container with read access and ensure network access to Plex.
 
 ### Platform testing notes
 
 * Tested extensively: Windows 11  
 * Tested moderately: Linux (64-bit ARM, Raspberry Pi 5 only)  
-* Not tested: Windows 10, Linux (x64), Linux (32-bit ARM), macOS (x64 & Apple Silicon)
-  
+* Not tested: Windows 10, Linux (x64), Linux (32-bit ARM), Synology DSM (via Container Manager), macOS (x64 & Apple Silicon)
+
+>[!NOTE]
+>Docker, Synology DSM, and macOS environments have not been tested, and no platform-specific guidance is available as these setups are outside the developer’s experience. While ListPorter should work fine on them, support will be limited to questions directly related to the tool itself.
+
 ## 🚀 Quick start guide
 
 **This is the simplest and most common way to use ListPorter.** It works across platforms and uses fuzzy matching to automatically align playlist paths with your Plex library.
@@ -175,6 +189,19 @@ These rules apply to all playlist-related operations, including `--mirror` and `
 >The program will only report the number of playlists that meet these criteria, not the total number of playlists on your Plex server. If a playlist doesn’t appear or isn’t deleted/modified as expected, it likely does not meet one or more of these conditions.
 
 ## ❓ Common questions
+
+### I'm struggling to understand how to run or configure ListPorter. What should I do?
+
+ListPorter is a command-line tool, so some familiarity with using a terminal or command prompt is expected. If you’re new to this, you can ask tools like [ChatGPT](https://chat.openai.com/), [Gemini](https://gemini.google.com/), [Claude](https://claude.ai/) or [Copilot](https://copilot.microsoft.com/) to walk you through the process in simple terms. You’ll need your Plex token and the numeric ID of your music library. These can be found via your Plex Web interface 
+
+Here’s a good starting prompt you can use (adjust as needed):
+
+>_I'm using [Windows/macOS/Linux] and I want to use ListPorter to import my M3U playlists into Plex. Here's the link to the project: https://github.com/mrsilver76/listporter. Please guide me step-by-step as if I'm new to the command line. Don't ask for my Plex token._
+
+Bear in mind that AI tools aren’t infallible - they can confidently give incorrect or misleading advice. Always think critically, double-check commands and be cautious when following their suggestions.
+
+>[!CAUTION]
+>If you're sharing content with AI tools, make sure you remove or redact your Plex token, IP addresses or any other sensitive information.
 
 ### Where are the logs stored? What do they show?
 
