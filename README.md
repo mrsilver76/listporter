@@ -30,7 +30,7 @@ Each release includes the following files (`x.x.x` denotes the version number):
 |Linux (64-bit Intel/AMD)|`ListPorter-x.x.x-linux-x64`|
 |Linux (64-bit ARM), e.g. Pi 4 and newer|`ListPorter-x.x.x-linux-arm64`|
 |Linux (32-bit ARM), e.g. Pi 3 and older|`ListPorter-x.x.x-linux-arm`|
-|Synology DSM|`ListPorter-x.x.x-linux-x64` 📦 Run via Docker / Container Manager|
+|Synology DSM|`ListPorter-x.x.x-linux-x64` 🐳 Run via Docker / Container Manager|
 |macOS (Apple Silicon)|`ListPorter-x.x.x-osx-arm64`|
 |macOS (Intel)|`ListPorter-x.x.x-osx-x64`|
 |Other/Developers|Source code (zip / tar.gz)|
