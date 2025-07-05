@@ -4,7 +4,6 @@ _A cross-platform command-line tool (Windows, Linux, macOS) for importing standa
 > [!TIP]
 > Using iTunes on Windows? [TuneLift](https://github.com/mrsilver76/tunelift) makes it easy to export your iTunes playlists to `.m3u` files.
 
-
 ## 🧰 Features
 * 💻 Runs on Windows 10 & 11, Linux (x64, ARM64, ARM32) and macOS (Intel & Apple Silicon).
 * 📂 Imports standard or extended M3U audio playlists to Plex.
