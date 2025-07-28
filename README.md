@@ -281,6 +281,11 @@ This will correctly transform the path to `/mnt/media/Pop/track.mp3`
 
 Some external apps and hardware players (such as Sonos) reference Plex playlists by their unique internal ID. If the playlist is deleted and recreated, it gets a new ID, which can break external links or integrations. To maintain compatibility, the tool clears the playlist's contents and repopulates it instead of deleting the entire playlist. This ensures external systems retain their connection to the playlist.
 
+### I'm getting an error about fuzzy matching being disabled - why?
+This error occurs when ListPorter finds multiple tracks in your Plex library with the same `album/artist/track` structure but different internal Plex IDs. This usually means you have duplicate files that differ only in the folder path _before_ `album/artist/track`. Because fuzzy matching ignores folder structure and focuses only on track-level details, it can’t tell these duplicates apart - so it disables fuzzy matching to avoid ambiguity.
+
+To resolve this, use the ListPorter logs to identify and remove the duplicates from your Plex library. The logs will show the conflicting tracks and their differing IDs, making it easier to track them down.
+
 ## 🛟 Questions/problems?
 
 Please raise an issue at https://github.com/mrsilver76/listporter/issues.
