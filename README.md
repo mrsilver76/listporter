@@ -232,7 +232,8 @@ ListPorter currently meets the needs it was designed for, and no major new featu
 - All fuzzy match clashes during the database build are now logged, not just the first.
 - Supplying an invalid Plex library ID now returns a clear error, instead of crashing.
 - `.m3u` track paths incorrectly prefixed with `file://` or `file-relative://` are now cleaned automatically.
-- Legacy log folders named "Plex Playlist Uploader" and "PlexPU" are no longer deleted. 
+- Legacy log folders named "Plex Playlist Uploader" and "PlexPU" are no longer deleted.
+- Cleaned up various pieces of code (analyzer suggestions regarding naming, simplifications, and style)
 - FAQs have been moved to a separate page to reduce clutter in the main README.
 
 ### 1.0.0 (27 June 2025)
