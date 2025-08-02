@@ -8,15 +8,16 @@ _A cross-platform command-line tool (Windows, Linux, macOS) for importing standa
 * 💻 Runs on Windows 10 & 11, Linux (x64, ARM64, ARM32) and macOS (Intel & Apple Silicon).
 * 📂 Imports standard or extended M3U audio playlists to Plex.
 * 🌐 Works with any Plex server platform (Windows, Linux, NAS, macOS) via the Plex API.
+* ⏳ Triggers a Plex library update/scan before import to include new tracks.
 * ✅ Skips importing playlists that haven’t changed.
-* 🪞 Mirrors Plex playlists to match imported M3U files (optional)
+* 🪞 Mirrors Plex playlists to match imported M3U files.
 * 🎯 Fuzzy matching logic (using last three path parts) to improve playlist-to-Plex matching.
-* 🔁 Force playlist paths to use / or \ to match your Plex server’s file format (optional)
-* 🛠️ Rewrite playlist paths using find & replace rules to match your Plex library (optional)
-* 🧭 Prepend a base path to support relative paths in playlists (optional)
-* 🧹 Deletes all Plex playlists before import (optional)
+* 🔁 Force playlist paths to use `/` or `\` to match your Plex server’s file format.
+* 🛠️ Rewrite playlist paths using find & replace rules to match your Plex library.
+* 🧭 Prepend a base path to support relative paths in playlists.
+* 🧹 Deletes all Plex playlists before import.
 * 🔗 Preserves playlist IDs to maintain compatibility with external players (e.g. Sonos)
-* 📘 Logs activity to timestamped text files
+* 📘 Logs activity to timestamped text files.
 
 ## 📦 Download
 
@@ -65,15 +66,15 @@ Each release includes the following files (`x.x.x` denotes the version number):
 
 ## 🚀 Quick start guide
 
-**This is the simplest and most common way to use ListPorter.** It works across platforms and uses fuzzy matching to automatically align playlist paths with your Plex library.
+**This is the simplest and most common way to use ListPorter.** It works across platforms, refreshes the library before starting and uses fuzzy matching to automatically align playlist paths with your Plex library.
 
 >[!TIP]
 >To ensure Plex contains only the playlists in your import folder (i.e. remove any that aren’t there), add the `--mirror` (`-m`) option.
 
 ```
-ListPorter -s 127.0.0.1 -t ABCDEFG -l 8 -i "C:\Playlists"
+ListPorter -s 127.0.0.1 -t ABCDEFG -l 8 -i "C:\Playlists" -k
 
-ListPorter --server 127.0.0.1 --token ABCDEFG --library 8 --import "C:\Playlists"
+ListPorter --server 127.0.0.1 --token ABCDEFG --library 8 --import "C:\Playlists" --update
 ```
 
 The example below shows a more advanced scenario suitable when fuzzy matching isn’t enough. It demonstrates how to explicitly rewrite paths and convert formats when importing playlists created on one platform (e.g. Windows) into a Plex server running on another (e.g. Linux).
@@ -168,6 +169,9 @@ Disables fuzzy matching and any automatic path adjustments. Only exact, case-ins
 
 ### Other options
 
+- **`-k`, `--update`**  
+Instructs Plex to update or scan the specified library before ListPorter starts importing playlists. This ensures any new songs you’ve added to your Plex library are recognized and indexed *before importing*. Without this, your playlists might reference new tracks Plex hasn’t scanned yet, which can cause errors during import.
+
 - **`-v`, `--verbose`**  
   Outputs additional information to the log files to aid in debugging.
   
@@ -227,7 +231,8 @@ ListPorter currently meets the needs it was designed for, and no major new featu
 
 ## 🕰️ Version history
 
-### 1.0.1 (xx xxxx 2025)
+### 1.1.0 (xx xxxx 2025)
+- Added `-k` (`--update`) to force Plex to scan the library prior to importing.
 - Logger now includes OS information to help with troubleshooting across platforms.
 - All fuzzy match clashes during the database build are now logged, not just the first.
 - Supplying an invalid Plex library ID now returns a clear error, instead of crashing.
