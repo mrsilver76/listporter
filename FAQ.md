@@ -81,7 +81,8 @@ D:/Music/Pop/track.mp3
 ```
 So the `--find` string `"D:\Music"` doesn't match `"D:/Music"`.
 
-✅ **Correct Usage**   
+### Correct Usage
+
 Use forward slashes in the `--find` string to match the slash transformation:
 ```
 --unix --find "D:/Music" --replace "/mnt/media"
@@ -104,18 +105,55 @@ This error occurs when ListPorter finds multiple tracks in your Plex library wit
 To resolve this, use the ListPorter logs to identify and remove the duplicates from your Plex library. The logs will show the conflicting tracks and their differing IDs, making it easier to track them down.
 
 ## Why do I see a warning that some items failed to match the Plex database?
-This warning appears when ListPorter can’t link some playlist items to Plex tracks because their file paths don’t align closely enough. Although ListPorter uses automatic fuzzy matching (assuming the path ends `artist/album/track` or `artist\album\track`) it will fail if these components differ substantially or are absent.
+This warning appears when ListPorter can’t link some playlist items to tracks in Plex because their file paths don’t align closely enough. For example, Plex might store a file as:
+```
+/media/music/Artist/Album/Track.mp3
+```
+but your playlist refers to it as:
+```
+D:\Music\Artist\Album\Track.mp3
+```
 
-In the situation where fuzzy matching is not working, you can use `--find`, `--replace`, `--unix`, `--windows` and `--base-path` to help rewrite your playlist tracks into a path that Plex can recognise.
+### How matching works
 
-To find out what path Plex is expecting:
+- ListPorter first checks Plex directly for an exact match.
+- If none is found, it uses automatic fuzzy matching (assuming the path ends with `artist/album/track` or `artist\album\track`).
+- If these components differ substantially, or are missing, the match will fail.
 
-1. Open [Plex Web](https://app.plex.tv/).
-2. Navigate to one of the problematic tracks (make sure it’s also in the playlist you're importing).
-3. Click the three dots (…) and choose “Get Info”.
-4. Look under the Files section - this shows the full path Plex has stored for the track.
+### How to fix it
 
-Adjust your playlist paths using the options above to match this format and re-run ListPorter. Once the paths align, the warnings should disappear.
+1. **Check your Plex library** - make sure the missing tracks really exist in Plex. If you’ve only just added them, Plex may not have finished scanning yet.
+   - You can either force a scan in Plex before importing, or use `-k` (`--update`) to have ListPorter trigger a Plex rescan automatically.
+2. **Find out what path Plex expects:**
+   - Open Plex Web.
+   - Navigate to one of the problematic tracks.
+   - Click the three dots (…) → Get Info.
+   - Look under the Files section for the full stored path.
+3. **Rewrite your playlist paths to match**, using:
+   - `--find` / `--replace` - search and replace text inside playlist paths. For example, change `D:\Music\` into `/media/music/`.
+   - `--unix` / `--windows` - convert between forward slashes (`/`) and backslashes (`\`) to match how Plex has stored paths on different platforms.
+   - `--base-path` - prepend a new base folder to playlist entries. Useful if your playlists only store relative paths, or if the root directory differs (e.g. add `/mnt/storage/music/` in front of every entry).
+
+Re-run ListPorter after adjusting. Once the playlist paths align (and Plex has completed scanning), the warnings should disappear.
+
+### Example
+
+Suppose your playlist entry is:
+```
+D:\Music\Daft Punk\Discovery (2001)\1. One More Time.mp3
+```
+but Plex has stored it as:
+```
+/mnt/content/Music/Daft Punk/Discovery (2001)/1. One More Time.mp3
+```
+You could fix this with:
+```
+--unix --find "D:/Music/" --replace "/mnt/content/Music/"
+```
+This rewrites the Windows path into the exact format Plex expects.
+
+>[!NOTE]
+>The `--unix` option first converts all `\` in your playlist paths to `/`. That’s why the `--find` argument uses forward slashes (`/`) instead of backslashes (`\`).
 
 ## Does this overwrite existing playlists in Plex?
 Only if their content has changed. The tool compares the track list in your M3U file with the existing Plex playlist. If they differ, it clears the Plex playlist and re-imports the correct tracks. If they are identical, it skips the update.
