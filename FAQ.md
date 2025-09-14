@@ -62,7 +62,6 @@ When enabled, `--mirror` will remove any Plex playlists that are not represented
 > [!CAUTION]
 > Be careful when using `--mirror` with a single file: this will cause all other playlists in the library to be removed, keeping only the one you provided.
 
-
 ## I'm using `--windows` or `--unix`. Why isn't `--find` matching?
 The `--windows` and `--unix` options change all slashes in the song paths before the `--find` and `--replace` logic runs. This means that if your `--find` string uses the original slash style (e.g., backslashes on Windows), it won’t match the transformed path.
 
@@ -104,7 +103,7 @@ This error occurs when ListPorter finds multiple tracks in your Plex library wit
 
 To resolve this, use the ListPorter logs to identify and remove the duplicates from your Plex library. The logs will show the conflicting tracks and their differing IDs, making it easier to track them down.
 
-<a name="tracks-not-found">
+<a name="tracks-not-found"></a>
 ## Why do I see a warning that some items failed to match the Plex database?
 This warning appears when ListPorter can’t link some playlist items to tracks in Plex because their file paths don’t align closely enough. For example, Plex might store a file as:
 ```
