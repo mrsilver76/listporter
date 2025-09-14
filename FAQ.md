@@ -104,6 +104,7 @@ This error occurs when ListPorter finds multiple tracks in your Plex library wit
 
 To resolve this, use the ListPorter logs to identify and remove the duplicates from your Plex library. The logs will show the conflicting tracks and their differing IDs, making it easier to track them down.
 
+<a name="tracks-not-found">
 ## Why do I see a warning that some items failed to match the Plex database?
 This warning appears when ListPorter can’t link some playlist items to tracks in Plex because their file paths don’t align closely enough. For example, Plex might store a file as:
 ```
