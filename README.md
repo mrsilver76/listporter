@@ -175,6 +175,12 @@ Disables fuzzy matching and any automatic path adjustments. Only exact, case-ins
 >[!NOTE]  
 >ListPorter waits for the Plex library scan to finish before importing playlists. The time this takes depends on your library size and number of changes. There will also be a short 5-10 second delay between Plex finishing the scan and ListPorter continuing.
 
+- **`-nc`, `--no-check`**  
+  Disables GitHub version checks for GroupMachine.
+
+>[!NOTE]
+>Version checks occur at most once every 7 days. ListPorter connects only to [this URL](https://api.github.com/repos/mrsilver76/listporter/releases/latest) to retrieve version information. No data about you, your music library or your Plex server is shared with the author or GitHub - you can verify this yourself by reviewing `GitHubVersionChecker.cs`
+
 - **`-v`, `--verbose`**  
   Outputs additional information to the log files to aid in debugging.
   
@@ -241,6 +247,7 @@ ListPorter currently meets the needs it was designed for, and no major new featu
 - Supplying an invalid Plex library ID now returns a clear error, instead of crashing.
 - `.m3u` track paths incorrectly prefixed with `file://` or `file-relative://` are now cleaned automatically.
 - Legacy log folders named "Plex Playlist Uploader" and "PlexPU" are no longer deleted.
+- Added `-nc` (`--no-check`) to disable GitHub version checking.
 - Cleaned up various pieces of code (analyzer suggestions regarding naming, simplifications, and style)
 - FAQs have been moved to a separate page to reduce clutter in the main README.
 
