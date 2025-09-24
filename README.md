@@ -244,10 +244,12 @@ ListPorter currently meets the needs it was designed for, and no major new featu
 - Added `-k` (`--update`) to force Plex to scan the library prior to importing.
 - Logger now includes OS information to help with troubleshooting across platforms.
 - All fuzzy match clashes during the database build are now logged, not just the first.
+- When fuzzy match clashes occur, ListPorter now exits with an error and a link to the FAQ.
 - Supplying an invalid Plex library ID now returns a clear error, instead of crashing.
 - `.m3u` track paths incorrectly prefixed with `file://` or `file-relative://` are now cleaned automatically.
 - Legacy log folders named "Plex Playlist Uploader" and "PlexPU" are no longer deleted.
 - Added `-nc` (`--no-check`) to disable GitHub version checking.
+- Updated GitHub version checking code and publish Powershell script.
 - Cleaned up various pieces of code (analyzer suggestions regarding naming, simplifications, and style)
 - FAQs have been moved to a separate page to reduce clutter in the main README.
 
