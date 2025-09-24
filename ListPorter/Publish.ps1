@@ -1,5 +1,5 @@
 # PowerShell script to build and package a C# project for multiple architectures
-# Version 1.0.2 - 4th June 2025
+# Version 1.0.4 - 19th September 2025
 
 # === User Configurable Section ===
 
@@ -37,8 +37,10 @@ function Get-SemanticVersion {
     $revision = $parts[3]
 
     $semVer = "$major.$minor.$revision"
+	# If the build number is > 0 then this is an interim release between
+	# the last one and the next one, so append "-buildX" to the version
     if ([int]$build -gt 0) {
-        $semVer += "-pre$build"
+        $semVer += "-build$build"
     }
     return $semVer
 }
@@ -165,26 +167,20 @@ foreach ($arch in $architectures) {
     # Clean publish folder
     Clear-Folder -folderPath $publishFolder
 
-    # Run dotnet publish
-    $publishCmd = @(
-        "publish", """$csproj""",
-        "-c Release",
-        "-r $arch",
-        "--self-contained false",
-        "/p:PublishSingleFile=true",
-        "/p:PublishTrimmed=false",
-        "/p:IncludeNativeLibrariesForSelfExtract=false",
-        "-o", """$publishFolder"""
-    ) -join " "
+	& dotnet publish $csproj.FullName `
+		-c Release `
+		-r $arch `
+		--self-contained false `
+		/p:PublishSingleFile=true `
+		/p:PublishTrimmed=false `
+		/p:IncludeNativeLibrariesForSelfExtract=false `
+		-o $publishFolder
 
-    Write-Host "Running: dotnet $publishCmd"
-    $proc = Start-Process -FilePath dotnet -ArgumentList $publishCmd -NoNewWindow -Wait -PassThru
-    Write-Host "Command finished"
-	
-    if ($proc.ExitCode -ne 0) {
-        Write-Error "dotnet publish failed for $arch with exit code $($proc.ExitCode)"
-        exit 1
-    }
+	# Check exit code
+	if ($LASTEXITCODE -ne 0) {
+		Write-Error "dotnet publish failed for $arch with exit code $LASTEXITCODE"
+		exit 1
+	}
 
     # Rename executable
     Rename-Executable -folderPath $publishFolder -projectName $projectName -version $version -architecture $arch -multipleArch $multipleArch
