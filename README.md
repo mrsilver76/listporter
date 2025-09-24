@@ -216,7 +216,7 @@ Configuration and command line options
 Logging and debugging
 
 - [Where are the logs stored? What do they show?](FAQ.md#where-are-the-logs-stored-what-do-they-show)
-- [I'm getting an error about fuzzy matching being disabled - why?](FAQ.md#im-getting-an-error-about-fuzzy-matching-being-disabled---why)
+- [I'm getting an error about fuzzy maching conflicts](FAQ.md#im-getting-an-error-about-fuzzy-matching-conflicts)
 - [Why do I see a warning that some items failed to match the Plex database?](FAQ.md#why-do-i-see-a-warning-that-some-items-failed-to-match-the-plex-database)
 
 Plex interaction and playlist behavior
