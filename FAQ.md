@@ -8,7 +8,7 @@ Getting started and running the tool
 
 Configuration and command line options
 
-- [Can I import playlists directly to a specific Plex Home user instead of the main/admin account?](#how-to-import-playlists-for-a-specific-plex-home-user)
+- [Can I import playlists directly to a specific Plex Home user instead of the main/admin account?](#can-i-import-a-playlist-directly-to-a-specific-plex-home-user-instead-of-the-mainadmin-account)
 - [What does the `--mirror` option do exactly?](#what-does-the---mirror-option-do-exactly)
 - [I'm using `--windows` or `--unix`. Why isn't `--find` matching?](#im-using---windows-or---unix-why-isnt---find-matching)
 
