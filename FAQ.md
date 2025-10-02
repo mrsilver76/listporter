@@ -75,7 +75,8 @@ Yes, but only by using the individual Plex Home user’s access token.
 Once you have that users token, run ListPorter as you would normally with `-t` (`--token`) and the users token.
 
 >[!NOTE]
->Non-admin (Plex Home) users cannot use the `-k` (`--update`) option to force a library refresh.
+>Non-admin (Plex Home) users cannot use the `-k` (`--update`) option to force a library refresh. This is a restriction enforced by Plex, not ListPorter.
+
 
 ## What does the `--mirror` option do exactly?
 When enabled, `--mirror` will remove any Plex playlists that are not represented in the M3U files you're importing. This allows you to keep your Plex playlists in sync with an external source, such as a local music manager or export directory. Mirroring is one-way only, you cannot use this tool to export changes you've made to your playlists in Plex.
