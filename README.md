@@ -110,6 +110,9 @@ ListPorter -s <address>[:<port>] -t <token> -l <library> -i <path> [options]
 - **`-t <token>`, `--token <token>`**   
   Plex authentication token. Required to interact with your Plex server. To find out your token, see [Plex's guide](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/).
 
+>[!NOTE]
+>If you want to upload playlists for a specific [Plex Home user](https://support.plex.tv/articles/203815766-what-is-plex-home/), **you must use the access token associated with that user**, not the admin account. Refer to [this FAQ entry](FAQ.md#can-i-import-a-playlist-directly-to-a-specific-plex-home-user-instead-of-the-mainadmin-account) for detailed steps on obtaining a Plex Home user token.
+
 >[!CAUTION]
 >You should never share your Plex token with anyone!
 
@@ -210,6 +213,7 @@ Getting started and running the tool
 
 Configuration and command line options
 
+- [Can I import playlists directly to a specific Plex Home user instead of the main/admin account?](FAQ.md#can-i-import-a-playlist-directly-to-a-specific-plex-home-user-instead-of-the-mainadmin-account)
 - [What does the `--mirror` option do exactly?](FAQ.md#what-does-the---mirror-option-do-exactly)
 - [I'm using `--windows` or `--unix`. Why isn't `--find` matching?](FAQ.md#im-using---windows-or---unix-why-isnt---find-matching)
 
