@@ -176,7 +176,8 @@ Disables fuzzy matching and any automatic path adjustments. Only exact, case-ins
   Instructs Plex to update or scan the specified library before ListPorter starts importing playlists. This ensures any new songs you’ve added to your Plex library are recognized and indexed *before importing*. Without this, your playlists might reference new tracks Plex hasn’t scanned yet, which can cause errors during import.
 
 >[!NOTE]  
->ListPorter waits for the Plex library scan to finish before importing playlists. The time this takes depends on your library size and number of changes. There will also be a short 5-10 second delay between Plex finishing the scan and ListPorter continuing.
+>- ListPorter waits for the Plex library scan to finish before importing playlists. The time this takes depends on your library size and number of changes. There will also be a short 5-10 second delay between Plex finishing the scan and ListPorter continuing.
+>- Non-admin (Plex Home) users cannot trigger a library scan. This is a restriction enforced by Plex, not ListPorter.
 
 - **`-nc`, `--no-check`**  
   Disables GitHub version checks for GroupMachine.
