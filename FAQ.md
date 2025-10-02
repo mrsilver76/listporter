@@ -8,6 +8,7 @@ Getting started and running the tool
 
 Configuration and command line options
 
+- [Can I import playlists directly to a specific Plex Home user instead of the main/admin account?](#how-to-import-playlists-for-a-specific-plex-home-user)
 - [What does the `--mirror` option do exactly?](#what-does-the---mirror-option-do-exactly)
 - [I'm using `--windows` or `--unix`. Why isn't `--find` matching?](#im-using---windows-or---unix-why-isnt---find-matching)
 
@@ -55,6 +56,26 @@ However you can enable this with a couple of steps:
 Yes. The tool is a command-line application and can be run from a headless environment like a Linux server or NAS, provided the [.NET 8.0 runtime](https://dotnet.microsoft.com/en-us/download/dotnet/8.0/runtime) is installed and the binary has execute permissions.
 
 If your NAS supports Docker then some people have reported that it's possible to get it running inside a .NET container.
+
+## Can I import a playlist directly to a specific Plex Home user instead of the main/admin account?
+
+Yes, but only by using the individual Plex Home user’s access token.
+
+[Plex Home](https://support.plex.tv/articles/203815766-what-is-plex-home/) allows you to create a group of users who all use Plex together on the same server, typically a family living in the same household. Each Plex Home user can have their own personalized libraries, watch history, and playlists. Unlike separate Plex accounts, Plex Home users exist under a single main/admin account, so by default, playlists you import appear under the admin account unless you use the user’s token.
+
+### How to import playlists for a specific Plex Home user
+
+1. Make sure you already have your [Plex admin token](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/).
+2. Find your server's client identifier by visiting [https://plex.tv/api/resources?X-Plex-Token=ABCD](https://plex.tv/api/resources?X-Plex-Token=ABCD), replacing `ABCD` with your Plex admin token.
+3. Locate your server and note its `clientIdentifier`.
+4. Get the Plex Home user’s access token by visiting [https://plex.tv/api/servers/WXYZ/shared_servers?X-Plex-Token=ABCD](https://plex.tv/api/servers/WXYZ/shared_servers?X-Plex-Token=ABCD), replacing `WXYZ` with your `clientIdentifier` and `ABCD` with your Plex admin token.
+5. Plex Home users may have blank `username` and `email` fields, so you will need to use the `userID` to identify the correct user.
+    - To find out what the `userID` is for a user, go to **Settings → Plex Home**, select the user and the `userID` is the last number in the URL.
+
+Once you have that users token, run ListPorter as you would normally with `-t` (`--token`) and the users token.
+
+>[!NOTE]
+>Non-admin (Plex Home) users cannot use the `-k` (`--update`) option to force a library refresh.
 
 ## What does the `--mirror` option do exactly?
 When enabled, `--mirror` will remove any Plex playlists that are not represented in the M3U files you're importing. This allows you to keep your Plex playlists in sync with an external source, such as a local music manager or export directory. Mirroring is one-way only, you cannot use this tool to export changes you've made to your playlists in Plex.
