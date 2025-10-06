@@ -78,7 +78,14 @@ namespace ListPorter
             Environment.Exit(0);
         }
 
-
+        /// <summary>
+        /// Displays the application header and configuration details in the console.
+        /// </summary>
+        /// <remarks>This method outputs a formatted header, including the application name, version,
+        /// copyright information,  and a brief description of its functionality. It also displays key configuration
+        /// details such as the Plex  server connection, library ID, import path, and any additional flags or path
+        /// rewriting options.</remarks>
+        /// <param name="args">The command-line arguments passed to the application, used for logging purposes.</param>
         public static void ShowHeader(string[] args)
         {
             Console.WriteLine(new string('-', 70));
@@ -159,8 +166,8 @@ namespace ListPorter
         /// <param name="args"></param>
         private static void LogEnvironmentInfo(string[] args)
         {
-            var dotnet = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription;
-            var os = System.Runtime.InteropServices.RuntimeInformation.OSDescription.Trim();
+            var dotnet = RuntimeInformation.FrameworkDescription;
+            var os = RuntimeInformation.OSDescription.Trim();
 
             var archName = RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant();
 

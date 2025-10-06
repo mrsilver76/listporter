@@ -18,9 +18,9 @@
 
 		<!-- Version information -->
 		<!-- Remember major.minor.BUILD.revision! -->
-		<Version>1.1.0.0</Version>
-		<AssemblyVersion>1.1.0.0</AssemblyVersion>
-		<FileVersion>1.1.0.0</FileVersion>
+		<Version>1.1.0.1</Version>
+		<AssemblyVersion>1.1.0.1</AssemblyVersion>
+		<FileVersion>1.1.0.1</FileVersion>
 		<AnalysisLevel>latest-recommended</AnalysisLevel>
 	</PropertyGroup>
 

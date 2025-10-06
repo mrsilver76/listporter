@@ -99,6 +99,10 @@ namespace ListPorter
                 string tsTime = DateTime.Now.ToString("HH:mm:ss", CultureInfo.InvariantCulture);
                 string logEntry = $"[{tsDate} {tsTime}] {message}";
 
+                // Redact the Plex token from log entries
+                if (!string.IsNullOrEmpty(Globals.PlexToken))
+                    logEntry = logEntry.Replace(Globals.PlexToken, "[PLEX-TOKEN]");
+
                 _writer.WriteLine(logEntry);
                 if (!verbose)
                     Console.WriteLine($"[{tsTime}] {message}");
