@@ -245,6 +245,11 @@ ListPorter currently meets the needs it was designed for, and no major new featu
 
 ## 🕰️ Version history
 
+### 1.1.1 (xx October 2025)
+- Output now confirms which Plex account or managed user the playlists will be uploaded to, based on the token provided.
+- Fixed bug where logs were not being saved in the correct location.
+- Fixed bug where Plex token was being incorrectly saved in the logs.
+
 ### 1.1.0 (24 September 2025)
 - Added `-k` (`--update`) to force Plex to scan the library prior to importing.
 - Logger now includes OS information to help with troubleshooting across platforms.
