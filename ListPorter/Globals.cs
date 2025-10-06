@@ -111,7 +111,7 @@ namespace ListPorter
         #region Internal settings
 
         /// <summary>Path to the app data folder</summary>
-        public static string AppDataPath { get; set; } = "";
+        public static string AppDataPath { get; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ListPorter");
 
         /// <summary>Current application version</summary>
         public static Version ProgramVersion { get; } = Assembly.GetExecutingAssembly().GetName().Version!;

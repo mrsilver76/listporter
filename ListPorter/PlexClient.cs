@@ -522,12 +522,14 @@ namespace ListPorter
         {
             try
             {
-                string urlPath = "/identity/";
+                string urlPath = "/";
                 string responseContent = GetHttpResponse(HttpMethod.Get, urlPath);
 
                 // Parse the XML response
                 var xml = XElement.Parse(responseContent);
                 var identifier = xml.Attribute("machineIdentifier")?.Value;
+                var myPlexUsername = xml.Attribute("myPlexUsername")?.Value;
+                var managedUser = xml.Element("User")?.Attribute("title")?.Value;
 
                 if (string.IsNullOrEmpty(identifier))
                 {
@@ -536,8 +538,15 @@ namespace ListPorter
                     return false;
                 }
                 Logger.Write($"Successfully connected to Plex server.");
+
                 Logger.Write($"machineIdentifer is {identifier.Length} characters long. First four are: {identifier[..Math.Min(identifier.Length, 4)]}", true);
                 _machineIdentifier = identifier;
+
+                if (!string.IsNullOrEmpty(managedUser))
+                    Logger.Write($"Uploading to managed user: {managedUser}");
+                else
+                    Logger.Write($"Uploading to Plex user: {myPlexUsername}");
+                
                 return true;
             }
             catch (Exception ex)
