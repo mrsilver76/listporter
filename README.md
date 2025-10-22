@@ -42,7 +42,7 @@ Each release includes the following files (`x.x.x` denotes the version number):
 ### Linux/macOS users
 
 - Download the appropriate binary for your platform (see table above).
-- Install the [.NET 8.0 runtime](https://learn.microsoft.com/en-gb/dotnet/core/install/linux?WT.mc_id=dotnet-35129-website).
+- Install the [.NET 8.0 runtime](https://dotnet.microsoft.com/en-us/download/dotnet/8.0/runtime). Slightly more technical pages can be found for [Linux](https://learn.microsoft.com/en-gb/dotnet/core/install/linux?WT.mc_id=dotnet-35129-website) and [macOS](https://learn.microsoft.com/en-gb/dotnet/core/install/macos).
 - ⚠️ Do not install the SDK, ASP.NET Core Runtime, or Desktop Runtime.
 - Make the downloaded file executable: `chmod +x ListPorter-x.x.x-<your-platform>`
 
@@ -50,7 +50,7 @@ Each release includes the following files (`x.x.x` denotes the version number):
 
 - Only Plus-series models (e.g. DS918+, DS920+) support Docker/Container Manager. Value and J-series models cannot run ListPorter this way.
 - For DSM 7.2+, use Container Manager; older versions use the Docker package.
-- Install the [.NET 8.0 runtime](https://learn.microsoft.com/en-gb/dotnet/core/install/linux?WT.mc_id=dotnet-35129-website) inside the container or use a [.NET container image](https://learn.microsoft.com/en-gb/dotnet/core/docker/introduction#net-images).
+- Install the [.NET 8.0 Linux runtime](https://learn.microsoft.com/en-gb/dotnet/core/install/linux?WT.mc_id=dotnet-35129-website) inside the container or use a [.NET container image](https://learn.microsoft.com/en-gb/dotnet/core/docker/introduction#net-images).
 - ⚠️ Do not install the SDK, ASP.NET Core Runtime, or Desktop Runtime.
 - Use the `ListPorter-x.x.x-linux-x64` binary inside the container.
 - Mount your playlist folder into the container with read access and ensure network access to Plex.
