@@ -89,27 +89,27 @@ The `--windows` and `--unix` options change all slashes in the song paths before
 
 As an example, lets assume your M3U contains the following:
 ```
-D:\Music\Pop\track.mp3
+D:\Content\Tunes\Faithless\Reverence\06 Insomnia.mp3
 ```
 
 If you run the tool with:
 ```
---unix --find "D:\Music" --replace "/mnt/media"
+--unix --find "D:\Content" --replace "/mnt/media"
 ```
 then after `--unix` is actioned, the path is transformed to:
 ```
-D:/Music/Pop/track.mp3
+D:/Content/Tunes/Faithless/Reverence/06 Insomnia.mp3
 ```
-So the `--find` string `"D:\Music"` doesn't match `"D:/Music"`.
+So the `--find` string `"D:\Content"` doesn't match `"D:/Content"`.
 
 ### Correct Usage
 
 Use forward slashes in the `--find` string to match the slash transformation:
 ```
---unix --find "D:/Music" --replace "/mnt/media"
+--unix --find "D:/Content" --replace "/mnt/media"
 ```
 
-This will correctly transform the path to `/mnt/media/Pop/track.mp3`
+This will correctly transform the path to `/mnt/media/Tunes/Faithless/Reverence/06 Insomnia.mp3`
 
 ## Where are the logs stored? What do they show?
 
