@@ -39,10 +39,19 @@ Each release includes the following files (`x.x.x` denotes the version number):
 > [!TIP]
 > There is no installer for native platforms. Just download the appropriate file and run it from the command line. If you're using Docker (e.g. on Synology), setup will differ - see notes below.
 
-### Linux/macOS users
+### macOS users
 
 - Download the appropriate binary for your platform (see table above).
-- Install the [.NET 8.0 runtime](https://dotnet.microsoft.com/en-us/download/dotnet/8.0/runtime). Slightly more technical pages can be found for [Linux](https://learn.microsoft.com/en-gb/dotnet/core/install/linux?WT.mc_id=dotnet-35129-website) and [macOS](https://learn.microsoft.com/en-gb/dotnet/core/install/macos).
+- Install the [.NET 8.0 runtime](https://dotnet.microsoft.com/en-us/download/dotnet/8.0/runtime). Slightly more technical information can be found [here](https://learn.microsoft.com/en-gb/dotnet/core/install/macos).
+- ⚠️ Do not install the SDK, ASP.NET Core Runtime, or Desktop Runtime.
+- Make the downloaded file executable: `chmod +x ListPorter-x.x.x-<your-platform>`
+- Apply an ad-hoc code signature: `codesign --force --deep --sign - ListPorter-x.x.x-<your-platform>`
+- Remove the quarantine attribute: `xattr -d com.apple.quarantine ListPorter-x.x.x-<your-platform>`
+
+### Linux users
+
+- Download the appropriate binary for your platform (see table above).
+- Install the [.NET 8.0 runtime](https://dotnet.microsoft.com/en-us/download/dotnet/8.0/runtime). Slightly more technical pages can be found [here](https://learn.microsoft.com/en-gb/dotnet/core/install/linux).
 - ⚠️ Do not install the SDK, ASP.NET Core Runtime, or Desktop Runtime.
 - Make the downloaded file executable: `chmod +x ListPorter-x.x.x-<your-platform>`
 
