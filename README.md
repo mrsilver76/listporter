@@ -1,7 +1,7 @@
 # ListPorter
 
 <p><img src="https://img.shields.io/badge/Windows-supported-0078D6?logo=windows&logoColor=white" alt="Windows"> <img src="https://img.shields.io/badge/Linux-supported-FCC624?logo=linux&logoColor=black" alt="Linux"> <img src="https://img.shields.io/badge/macOS-supported-000000?logo=apple&logoColor=white" alt="macOS"> <img src="https://img.shields.io/badge/.NET-C%23-512BD4?logo=dotnet&logoColor=white" alt=".NET/C#"> 
-<img src="https://img.shields.io/github/license/mrsilver76/listporter?logo=gnu&logoColor=white" alt="GPL License"></p>
+<img src="https://img.shields.io/github/license/mrsilver76/listporter?logo=gnu&logoColor=white" alt="GPL License"> <img src="https://img.shields.io/github/downloads/mrsilver76/listporter/total" alt="total downloads"></p>
 
 _A cross-platform command-line tool (Windows, Linux, macOS) for importing standard or extended `.m3u` audio playlists into [Plex Media Server](https://www.plex.tv/media-server-downloads/). Supports fuzzy path matching, path rewriting, and optional mirroring._
 
