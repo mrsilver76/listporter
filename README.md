@@ -264,7 +264,7 @@ ListPorter currently meets the needs it was designed for, and no major new featu
 
 ### 1.1.2 (xx March 2026)
 - Fixed a bug where paths in playlists with accented or special characters could fail to match to content already in Plex due to UTF8 normalisation differences.
-- Fixed a bug where using `--unix` or `--windows` without `--find` or `--basepath` would incorrectly disable fuzzy matching.
+- Fixed a bug where using `--unix` or `--windows` without `--find` or `--base-path` would incorrectly disable fuzzy matching.
 - Fixed a bug where some command line options weren't being correctly noted in the console/terminal output
 - Updated copyright years. 
 
