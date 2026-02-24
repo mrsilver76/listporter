@@ -160,7 +160,7 @@ ListPorter tries to match each file path in your playlist with the paths Plex ha
 
 This approach works well when root paths differ or when file systems vary across devices, as long as the layout near the file itself is consistent. However, if files have been renamed or stored with a different folder hierarchy, exact or fuzzy matching may fail.
 
-**If you use any of the options below to rewrite paths, fuzzy matching will be automatically disabled.** This is to avoid conflicts between automated and manual path handling.
+**Fuzzy matching is automatically disabled when using `-f` (`--find`) or `-b` (`--base-path`), as these options explicitly rewrite how paths are interpreted.** Other options, including `-w` (`--windows`) and `-u` (`--unix`) do not disable fuzzy matching because separator differences between Windows and Unix are handled automatically.
 
 These options don’t modify the playlist files themselves - they only affect how paths are interpreted during import.
 
@@ -262,10 +262,17 @@ ListPorter currently meets the needs it was designed for, and no major new featu
 
 ## 🕰️ Version history
 
+### 1.1.2 (xx March 2026)
+- Fixed a bug where paths in playlists with accented or special characters could fail to match to content already in Plex due to UTF8 normalisation differences.
+- Fixed a bug where using `--unix` or `--windows` without `--find` or `--basepath` would incorrectly disable fuzzy matching.
+- Fixed a bug where some command line options weren't being correctly noted in the console/terminal output
+- Updated copyright years. 
+
 ### 1.1.1 (06 October 2025)
 - Output now confirms which Plex account or managed user the playlists will be uploaded to, based on the token provided.
 - Fixed bug where logs were not being saved in the correct location.
 - Fixed bug where Plex token was being incorrectly saved in the logs.
+
 
 ### 1.1.0 (24 September 2025)
 - Added `-k` (`--update`) to force Plex to scan the library prior to importing.
