@@ -1,7 +1,7 @@
 # ListPorter
 
 <p><img src="https://img.shields.io/badge/Windows-supported-0078D6?logo=windows&logoColor=white" alt="Windows"> <img src="https://img.shields.io/badge/Linux-supported-FCC624?logo=linux&logoColor=black" alt="Linux"> <img src="https://img.shields.io/badge/macOS-supported-000000?logo=apple&logoColor=white" alt="macOS"> <img src="https://img.shields.io/badge/.NET-C%23-512BD4?logo=dotnet&logoColor=white" alt=".NET/C#"> 
-<img src="https://img.shields.io/github/license/mrsilver76/listporter?logo=gnu&logoColor=white" alt="GPL License"> <img src="https://img.shields.io/github/downloads/mrsilver76/listporter/total" alt="total downloads"></p>
+<img src="https://img.shields.io/github/license/mrsilver76/listporter?logo=gnu&logoColor=white" alt="GPL License"> <img src="https://img.shields.io/github/stars/mrsilver76/listporter" alt="total stars"></p>
 
 _A cross-platform command-line tool (Windows, Linux, macOS) for importing standard or extended `.m3u` audio playlists into [Plex Media Server](https://www.plex.tv/media-server-downloads/). Supports fuzzy path matching, path rewriting, and optional mirroring._
 
@@ -266,7 +266,8 @@ ListPorter currently meets the needs it was designed for, and no major new featu
 - Fixed a bug where paths in playlists with accented or special characters could fail to match to content already in Plex due to UTF8 normalisation differences.
 - Fixed a bug where using `--unix` or `--windows` without `--find` or `--base-path` would incorrectly disable fuzzy matching.
 - Fixed a bug where some command line options weren't being correctly noted in the console/terminal output
-- Updated copyright years. 
+- Forced SDK to 8.0.319 due to a known .NET SDK defect causing very large executables (see dotnet/sdk#51888) 
+- Updated copyright.
 
 ### 1.1.1 (06 October 2025)
 - Output now confirms which Plex account or managed user the playlists will be uploaded to, based on the token provided.
