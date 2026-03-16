@@ -14,13 +14,13 @@
 		<AssemblyTitle>Upload standard or extended .m3u playlist files to Plex Media Server</AssemblyTitle>
 		<PackageProjectUrl>https://github.com/mrsilver76/listporter</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/mrsilver76/listporter</RepositoryUrl>
-		<Copyright>Copyright © 2020-2025 Richard Lawrence</Copyright>
+		<Copyright>Copyright © 2020-2026 Richard Lawrence</Copyright>
 
 		<!-- Version information -->
 		<!-- Remember major.minor.BUILD.revision! -->
-		<Version>1.1.0.1</Version>
-		<AssemblyVersion>1.1.0.1</AssemblyVersion>
-		<FileVersion>1.1.0.1</FileVersion>
+		<Version>1.1.0.2</Version>
+		<AssemblyVersion>1.1.0.2</AssemblyVersion>
+		<FileVersion>1.1.0.2</FileVersion>
 		<AnalysisLevel>latest-recommended</AnalysisLevel>
 	</PropertyGroup>
 

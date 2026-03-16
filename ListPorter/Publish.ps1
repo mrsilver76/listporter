@@ -170,7 +170,7 @@ foreach ($arch in $architectures) {
 	& dotnet publish $csproj.FullName `
 		-c Release `
 		-r $arch `
-		--self-contained false `
+		--no-self-contained `
 		/p:PublishSingleFile=true `
 		/p:PublishTrimmed=false `
 		/p:IncludeNativeLibrariesForSelfExtract=false `

@@ -1,6 +1,6 @@
 ﻿/*
  * ListPorter - Upload standard or extended .m3u playlist files to Plex Media Server.
- * Copyright (C) 2020-2025 Richard Lawrence
+ * Copyright (C) 2020-2026 Richard Lawrence
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -142,7 +142,8 @@ namespace ListPorter
             foreach (var track in container.Elements("Track"))
             {
                 var media = track.Element("Media")?.Element("Part");
-                string? filePath = media?.Attribute("file")?.Value;
+                // Normalize the file path to NFC form to ensure consistent Unicode representation, which can help with matching tracks later on.
+                string? filePath = media?.Attribute("file")?.Value.Normalize(NormalizationForm.FormC);
                 string? ratingKeyStr = track.Attribute("ratingKey")?.Value;
 
                 bool isDeleted = media?.Attribute("deletedAt") != null;

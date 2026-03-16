@@ -1,6 +1,6 @@
 ﻿/*
  * ListPorter - Upload standard or extended .m3u playlist files to Plex Media Server.
- * Copyright (C) 2020-2025 Richard Lawrence
+ * Copyright (C) 2020-2026 Richard Lawrence
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License

@@ -1,6 +1,6 @@
 ﻿/*
  * ListPorter - Upload standard or extended .m3u playlist files to Plex Media Server.
- * Copyright (C) 2020-2025 Richard Lawrence
+ * Copyright (C) 2020-2026 Richard Lawrence
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -126,9 +126,15 @@ namespace ListPorter
                     i++;
                 }
                 else if (arg == "-u" || arg == "--unix" || arg == "--linux")  // Allow --linux as an alias for --unix
+                {
                     Globals.PathStyleOption = Globals.PathStyle.ForceLinux;
+                    ParsedFlags.Add("Unix");
+                }
                 else if (arg == "-w" || arg == "--windows")
+                {
                     Globals.PathStyleOption = Globals.PathStyle.ForceWindows;
+                    ParsedFlags.Add("Windows");
+                }
                 else if (arg == "-v" || arg == "--verbose")
                 {
                     Globals.VerboseMode = true;
@@ -182,14 +188,20 @@ namespace ListPorter
             if (Globals.PathToImport != null && !Directory.Exists(Globals.PathToImport) && !File.Exists(Globals.PathToImport))
                 ConsoleOutput.DisplayUsage($"Path to import does not exist ({Globals.PathToImport})");
 
-            // If path rewriting is enabled, turn off fuzzy path matching
+            // If FindText or BasePath is configured, then turn off fuzzy path matching.
 
-            if (!string.IsNullOrEmpty(Globals.FindText) || Globals.PathStyleOption != Globals.PathStyle.Auto || !string.IsNullOrEmpty(Globals.BasePath))
+            if (!string.IsNullOrEmpty(Globals.FindText) || !string.IsNullOrEmpty(Globals.BasePath))
             {
                 Globals.UsingPathRewriting = true;
                 Globals.UseFuzzyMatching = false;
                 Logger.Write("Path rewriting enabled, fuzzy path matching is disabled.", true);
             }
+
+            // If the user has defined --windows or --linux without any FindText or BasePath, then fuzzy matching will still be enabled
+            // and these options will be ignored.
+
+            if (Globals.UseFuzzyMatching == true && Globals.PathStyleOption != Globals.PathStyle.Auto)
+                Logger.Write("Warning: Forcing path style to " + (Globals.PathStyleOption == Globals.PathStyle.ForceWindows ? "Windows" : "Unix") + " will have no effect on fuzzy matching.", true);
         }
     }
 }
