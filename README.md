@@ -265,8 +265,8 @@ ListPorter currently meets the needs it was designed for, and no major new featu
 ### 1.1.2 (xx March 2026)
 - Fixed a bug where paths in playlists with accented or special characters could fail to match to content already in Plex due to UTF8 normalisation differences.
 - Fixed a bug where using `--unix` or `--windows` without `--find` or `--base-path` would incorrectly disable fuzzy matching.
-- Fixed a bug where some command line options weren't being correctly noted in the console/terminal output
-- Forced SDK to 8.0.319 due to a known .NET SDK defect causing very large executables (see dotnet/sdk#51888) 
+- Fixed a bug where some command line options weren't being correctly noted in the console/terminal output.
+- Updated the publish script to use `--no-self-contained` as identifed by dotnet/sdk#51888.
 - Updated copyright.
 
 ### 1.1.1 (06 October 2025)
