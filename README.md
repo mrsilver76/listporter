@@ -83,19 +83,18 @@ Each release includes the following files (`x.x.x` denotes the version number):
 
 ## 🚀 Quick start guide
 
-**This is the simplest and most common way to use ListPorter.** It works across platforms, refreshes the library before starting and uses fuzzy matching to automatically align playlist paths with your Plex library.
+**This is the simplest and most common way to use ListPorter.** It works across platforms, automatically finds the (single) music library, refreshes the library before starting and uses fuzzy matching to automatically align playlist paths with your Plex library.
 
 >[!TIP]
 >To ensure Plex contains only the playlists in your import folder (i.e. remove any that aren’t there), add the `--mirror` (`-m`) option.
 
 ```
-ListPorter -s 127.0.0.1 -t ABCDEFG -l 8 -i "C:\Playlists" -k
+ListPorter -s 127.0.0.1 -t ABCDEFG -i "C:\Playlists" -k
 
-ListPorter --server 127.0.0.1 --token ABCDEFG --library 8 --import "C:\Playlists" --update
+ListPorter --server 127.0.0.1 --token ABCDEFG --import "C:\Playlists" --update
 ```
 
-The example below shows a more advanced scenario suitable when fuzzy matching isn’t enough. It demonstrates how to explicitly rewrite paths and convert formats when importing playlists created on one platform (e.g. Windows) into a Plex server running on another (e.g. Linux).
-Note that `--find` (`-f`) uses forward slashes because `--linux` (`-l`) converts backslashes to forward slashes.
+The example below shows a more advanced scenario suitable when you have more than one music library (ID `10`) and fuzzy matching isn’t enough. It demonstrates how to explicitly rewrite paths and convert formats when importing playlists created on one platform (e.g. Windows) into a Plex server running on another (e.g. Linux). Note that `--find` (`-f`) uses forward slashes because `--linux` (`-l`) converts backslashes to forward slashes.
 
 >[!CAUTION]
 >This example deletes existing Plex playlists before import. Only use `--delete` (`-d`) if you're sure you want to replace everything..
@@ -111,7 +110,7 @@ ListPorter --server pimachine --token ABCDEFG --library 10 --import "C:\Playlist
 ListPorter is a command-line tool. Run it from a terminal or command prompt, supplying all options and arguments directly on the command line. Logs with detailed information are also written and you can find the log file location using `--help` (`-h`).
 
 ```
-ListPorter -s <address>[:<port>] -t <token> -l <library> -i <path> [options]
+ListPorter -s <address>[:<port>] -t <token> [-l <library>] -i <path> [options]
 ```
 
 ### Mandatory arguments
@@ -127,23 +126,32 @@ ListPorter -s <address>[:<port>] -t <token> -l <library> -i <path> [options]
 - **`-t <token>`, `--token <token>`**   
   Plex authentication token. Required to interact with your Plex server. To find out your token, see [Plex's guide](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/).
 
->[!NOTE]
->If you want to upload playlists for a specific [Plex Home user](https://support.plex.tv/articles/203815766-what-is-plex-home/), **you must use the access token associated with that user**, not the admin account. Refer to [this FAQ entry](FAQ.md#can-i-import-a-playlist-directly-to-a-specific-plex-home-user-instead-of-the-mainadmin-account) for detailed steps on obtaining a Plex Home user token.
+  If you want to upload playlists for a specific [Plex Home user](https://support.plex.tv/articles/203815766-what-is-plex-home/), **you must use the access token associated with that user**, not the admin account. Refer to [this FAQ entry](FAQ.md#can-i-import-a-playlist-directly-to-a-specific-plex-home-user-instead-of-the-mainadmin-account) for detailed steps on obtaining a Plex Home user token.
 
 >[!CAUTION]
 >You should never share your Plex token with anyone!
 
-- **`-l <library>`, `--library <library>`**   
-  Plex library ID that contains your music. This must be a _Music_ library. To find your library ID, go into the Plex web client, hover the mouse over the library you want and look at the URL. It will end with `source=xx` where `xx` is the library ID.
-
 - **`-i <path>`, `--import <path>`**   
-  Path to a single .m3u file or a directory containing multiple .m3u files.
+  Path to a single `.m3u` or `.m3u8` file, or a directory containing playlist files to import.
 
-### Optional arguments
-  
-#### Playlist sync options
+### Library options
 
-These options will remove playlists from your Plex server under specific conditions. Only playlists that are manual (not smart/dynamic), contain audio tracks only and belong entirely to the music library specified by `--library` will ever be deleted. No other content (such as music files, metadata or non-matching playlists) is modified or removed..
+- **`-l <library>`, `--library <library>`**  
+  Optional Plex music library ID. If your Plex server has only one Music library, ListPorter will automatically detect and use it, so this option is not required. If your server has multiple music libraries, ListPorter will list each library with its ID and name and ask you to change your command line to specify which one to use.
+
+### Playlist sync options
+
+These options will remove playlists from your Plex server under specific conditions.
+
+Only playlists meeting **all** of the following criteria will ever be deleted
+
+- The playlist is manual, not smart/dynamic.
+- The playlist contains audio tracks only.
+- The playlist belongs entirely to the selected music library.
+
+The selected library is either the library specified with `--library` or, when this is not supplied, the single music library automatically detected by ListPorter.
+
+No other content, such as music files, metadata or non-matching playlists, is modified or removed.
 
 - **`-d`, `--delete`**   
   Deletes all existing playlists in the specified Plex music library before importing any new ones.
@@ -154,7 +162,7 @@ These options will remove playlists from your Plex server under specific conditi
 > [!CAUTION]
 > Be careful when using `--mirror` with a single file: this will cause all other playlists in the library to be removed, keeping only the one you provided.
 
-#### Path rewriting options
+### Path rewriting options
 
 ListPorter tries to match each file path in your playlist with the paths Plex has stored. It first attempts an exact match. If that fails, it automatically uses fuzzy matching, based on the assumption that music files are organised with a structure of `artist/album/track` or `artist\album\track`. It compares only the last three parts of each path, ignoring drive letters, shares, or deeper folder structures.
 
@@ -214,7 +222,7 @@ The program will only recognise and process playlists on your Plex server that m
 
 1. All items in the playlist must be audio - playlists containing video or mixed content are ignored.
 2. The playlist is manual, not a smart/dynamic playlist.
-3. All audio tracks in the playlist belong to the library ID provided via `--library`.
+3. All audio tracks in the playlist belong to the selected music library.
 
 These rules apply to all playlist-related operations, including `--mirror` and `--delete`.
 
@@ -261,6 +269,9 @@ ListPorter currently meets the needs it was designed for, and no major new featu
 - With thanks to https://www.plexopedia.com/plex-media-server/api/ for Plex API documentation.
 
 ## 🕰️ Version history
+
+### 1.2.0 (xx)
+- to do
 
 ### 1.1.2 (16 March 2026)
 - Fixed a bug where paths in playlists with accented or special characters could fail to match to content already in Plex due to UTF8 normalisation differences.
