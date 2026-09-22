@@ -203,7 +203,7 @@ ListPorter can automatically detect and use your music library when your Plex se
 
 If your server has multiple music libraries, ListPorter cannot know which one you want to import the playlists into, so you must specify the library using `-l` (or `--library`).
 
-To help you, Listporter will display each library's ID and name - so if your current command line is:
+To help you, ListPorter will display each library's ID and name - so if your current command line is:
 
 ```
 ListPorter -s localhost -t <token> -i "C:\Playlists"
@@ -211,7 +211,7 @@ ListPorter -s localhost -t <token> -i "C:\Playlists"
 and you want to use library ID `5` then append that to the end to make:
 
 ```
-ListPorter -s localhost -t <token> -l 5 -i "C:\Playlists" -l 5
+ListPorter -s localhost -t <token> -i "C:\Playlists" -l 5
 ```
 
 You only need to specify `-l` (or `--library`) when you have multiple music libraries. If your Plex server has a single music library, ListPorter will detect and use it automatically.
