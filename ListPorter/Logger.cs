@@ -97,7 +97,13 @@ namespace ListPorter
 
                 string tsDate = DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
                 string tsTime = DateTime.Now.ToString("HH:mm:ss", CultureInfo.InvariantCulture);
-                string logEntry = $"[{tsDate} {tsTime}] {message}";
+
+                // Mask the Plex user in the log file only (the console still shows the original message)
+                string logMessage = message;
+                if (message.StartsWith("Uploading to Plex user: ", StringComparison.Ordinal))
+                    logMessage = MaskPlexUser(message);
+
+                string logEntry = $"[{tsDate} {tsTime}] {logMessage}";
 
                 // Redact the Plex token from log entries
                 if (!string.IsNullOrEmpty(Globals.PlexToken))
@@ -107,6 +113,42 @@ namespace ListPorter
                 if (!verbose)
                     Console.WriteLine($"[{tsTime}] {message}");
             }
+        }
+
+        /// <summary>
+        /// Masks the Plex user in an "Uploading to Plex user: " message if it looks like an email address, so
+        /// that it isn't leaked into log files.
+        /// </summary>
+        /// <param name="message">The message starting with "Uploading to Plex user: "</param>
+        /// <returns>The message with any email address masked, or unchanged if the user isn't an email address</returns>
+        private static string MaskPlexUser(string message)
+        {
+            const string prefix = "Uploading to Plex user: ";
+            string user = message[prefix.Length..];
+
+            int at = user.IndexOf('@');
+            if (at < 0)
+                return message;
+
+            string local = user[..at];
+            string domain = user[(at + 1)..];
+
+            return prefix + MaskKeepingEnds(local, false) + "@" + MaskKeepingEnds(domain, true);
+        }
+
+        /// <summary>
+        /// Replaces every character with '*' except the first and last, and optionally except for dots.
+        /// </summary>
+        private static string MaskKeepingEnds(string value, bool keepDots)
+        {
+            char[] chars = value.ToCharArray();
+            for (int i = 1; i < chars.Length - 1; i++)
+            {
+                if (keepDots && chars[i] == '.')
+                    continue;
+                chars[i] = '*';
+            }
+            return new string(chars);
         }
 
         /// <summary>
@@ -120,11 +162,8 @@ namespace ListPorter
 
             lock (_lock)
             {
-                if (_writer != null)
-                {
-                    _writer.Dispose();
-                    _writer = null;
-                }
+                _writer?.Dispose();
+                _writer = null;
                 _initialised = false;
             }
         }

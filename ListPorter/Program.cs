@@ -37,11 +37,14 @@ namespace ListPorter
             CommandLineParser.ParseArguments(args);
 
             // Show the header
-            ConsoleOutput.ShowHeader(args);
+            ConsoleOutput.ShowHeader();
             
             // Check connectivity
             if (PlexClient.CheckPlexConnectivity() == false)
                 System.Environment.Exit(1);
+
+            // Find (or validate) the music library
+            PlexClient.LocatePlexMusicLibrary();
 
             // Update the Plex library (if the option is enabled)
             PlexClient.UpdatePlexLibrary();

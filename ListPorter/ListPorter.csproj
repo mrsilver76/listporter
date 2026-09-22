@@ -18,14 +18,14 @@
 
 		<!-- Version information -->
 		<!-- Remember major.minor.BUILD.revision! -->
-		<Version>1.1.0.2</Version>
-		<AssemblyVersion>1.1.0.2</AssemblyVersion>
-		<FileVersion>1.1.0.2</FileVersion>
+		<Version>1.1.1.2</Version>
+		<AssemblyVersion>1.1.1.2</AssemblyVersion>
+		<FileVersion>1.1.1.2</FileVersion>
 		<AnalysisLevel>latest-recommended</AnalysisLevel>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<Content Include="ListPorter.ico" />
-		<PackageReference Include="ini-parser" Version="2.5.2" />
+		<PackageReference Include="ini-parser" Version="2.5.2" NoWarn="NU1701" />
 	</ItemGroup>
 </Project>

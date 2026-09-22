@@ -182,7 +182,7 @@ namespace ListPorter
             if (fuzzyConflictCount > 0)
             {
                 ConsoleOutput.DisplayFuzzyMatchConflicts(fuzzyConflictCount);
-                System.Environment.Exit(-1);
+                System.Environment.Exit(1);  // Unreachable but included for clarity and safety
             }
 
             // If we are here then we have built the map successfully

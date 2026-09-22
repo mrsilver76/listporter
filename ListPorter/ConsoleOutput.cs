@@ -19,6 +19,7 @@
 
 using System.Globalization;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace ListPorter
@@ -31,7 +32,7 @@ namespace ListPorter
         /// <param name="errorMessage">Error message</param>
         public static void DisplayUsage(string errorMessage = "")
         {
-            Console.WriteLine($"Usage: {System.AppDomain.CurrentDomain.FriendlyName} -s <address>[:<port>] -t <token> -l <library> -i <path> [options]\n" +
+            Console.WriteLine($"Usage: {System.AppDomain.CurrentDomain.FriendlyName} -s <address>[:<port>] -t <token> [-l <library>] -i <path> [options]\n" +
                                 "Upload standard or extended .m3u playlist files to Plex Media Server.\n");
 
 
@@ -39,44 +40,134 @@ namespace ListPorter
                 Console.WriteLine($"This is version {VersionHelper.OutputVersion(Globals.ProgramVersion)}, copyright © 2020-{DateTime.Now.Year} Richard Lawrence.\n" +
                                     "Music & multimedia icon by paonkz - Flaticon (https://www.flaticon.com/free-icons/music-and-multimedia)\n");
 
-            Console.WriteLine("Mandatory arguments:\n" +
-                                "   -s, --server <address>[:<port>]    Plex server address.\n" +
-                                "                                      Add https:// for secure connection.\n" +
-                                "                                      (port is optional, defaults to 32400).\n" +
-                                "   -t, --token <token>                Plex authentication token.\n" +
-                                "   -l, --library <library>            Plex library ID to use.\n" +
-                                "   -i, --import <path>                Path to a playlist file or directory.\n\n" +
-                                "Optional arguments:\n" +
-                                "  Playlist sync options:\n" +
-                                "    -d, --delete                      Delete all playlists from library on start.\n" +
-                                "    -m, --mirror                      Mirror Plex library to match playlists.\n" +
-                                "\n" +
-                                "  Path rewriting options:\n" +
-                                "    -u, --unix                        Force forward slashes in song paths.\n" +
-                                "                                      (for Plex servers running on Linux)\n" +
-                                "    -w, --windows                     Force backslashes in song paths.\n" +
-                                "                                      (for Plex servers running on Windows)\n" +
-                                "    -f, --find <text>                 Find text within the song path.\n" +
-                                "    -r, --replace <text>              Replace found text in song path with <text>.\n" +
-                                "    -b, --base-path <path>            Base path to use for relative song paths.\n" +
-                                "    -x, --exact-only                  Disable fuzzy path matching. Exact matches only.\n" +
-                                "\n" +
-                                "  Other options:\n" +
-                                "    -k, --update                      Trigger a library update before playlist import.\n" +
-                                "    -v, --verbose                     Verbose output to log files.\n" +
-                                "    -nc, --no-check                   Don't check GitHub for later versions.\n" +
-                                "    -h, --help                        Show help message and log file location.\n" +
-                                "\n" +
-                               $"Logs are written to {Path.Combine(Globals.AppDataPath, "Logs")}");
+            PrintOptionsWithDescriptions();
+
+            Console.WriteLine($"Logs are written to {Path.Combine(Globals.AppDataPath, "Logs")}");
 
             if (!string.IsNullOrEmpty(errorMessage))
             {
                 Console.WriteLine();
                 Console.WriteLine($"Error: {errorMessage}");
-                Environment.Exit(-1);
+                Environment.Exit(1);
             }
             Environment.Exit(0);
         }
+
+        /// <summary>
+        /// Outputs the command line options and their descriptions in a formatted manner, grouped by sections.
+        /// </summary>
+        static void PrintOptionsWithDescriptions()
+        {
+            // Define sections and their options + descriptions
+            var sections = new Dictionary<string, (string option, string description)[]>
+            {
+                ["Mandatory arguments"] =
+                [
+                    ("-s, --server <address>[:<port>]", "Plex server address. Prefix with https:// for a secure connection. The port is optional and defaults to 32400."),
+                    ("-t, --token <token>", "Plex authentication token used to access the server."),
+                    ("-i, --import <path>", "Path to a single .m3u or .m3u8 playlist file, or to a directory containing playlist files to import.")
+                ],
+
+                ["Library options"] =
+                [
+                    ("-l, --library <library>", "Numeric ID of the Plex music library that the playlists will be uploaded to. Optional when the server has only one music library. Required when multiple music libraries exist.")
+                ],
+
+                ["Playlist sync options"] =
+                [
+                    ("-d, --delete", "Delete all existing playlists from the Plex library before importing."),
+                    ("-m, --mirror", "Mirror the playlists in the Plex library to match the imported files. Any Plex playlist that is not among the playlist files processed in this run will be deleted.")
+                ],
+
+                ["Path rewriting options"] =
+                [
+                    ("-u, --unix", "Force forward slashes in song paths. Use this when the Plex server is running on Linux or another Unix-like system."),
+                    ("-w, --windows", "Force backslashes in song paths. Use this when the Plex server is running on Windows."),
+                    ("-f, --find <text>", "Find text within each song path so that it can be replaced. Disables fuzzy path matching."),
+                    ("-r, --replace <text>", "Replace the text found by --find with <text>. If omitted, the found text is removed. Requires --find."),
+                    ("-b, --base-path <path>", "Base path to prepend to relative song paths in the playlist. Disables fuzzy path matching."),
+                    ("-x, --exact-only", "Disable fuzzy path matching so that only exact path matches are used. By default, if no exact match is found then the last three parts of the path (artist, album and track) are compared.")
+                ],
+
+                ["Other options"] =
+                [
+                    ("-k, --update", "Trigger a Plex library update and wait for it to complete before importing the playlists."),
+                    ("-v, --verbose", "Write verbose output to the log files."),
+                    ("-nc, --no-check", "Do not check GitHub for newer versions of ListPorter."),
+                    ("/?, -h, --help", "Display this help message and the log file location, then exit.")
+                ]
+            };
+
+            // Determine max line width (at least 50 chars, or console width - 5)
+            int maxLineWidth = Math.Max(Console.WindowWidth, 50) - 5;
+
+            // Find max option length across all sections for consistent column width
+            int firstColWidth = 0;
+            foreach (var section in sections.Values)
+                foreach (var (option, _) in section)
+                    firstColWidth = Math.Max(firstColWidth, option.Length);
+            firstColWidth += 2; // 2-character gap
+
+            // Print each section followed by the options
+            foreach (var (header, options) in sections)
+            {
+                // Section header
+                Console.WriteLine(header + ":");
+
+                // Each option + description
+                foreach (var (option, description) in options)
+                {
+                    // Wrap description
+                    var wrapped = WrapText(description, maxLineWidth - firstColWidth - 1); // -1 for extra indent
+                    bool firstLine = true;
+
+                    foreach (var line in wrapped)
+                    {
+                        if (firstLine)
+                        {
+                            // first line: 1-char indent + option + description
+                            Console.WriteLine(" " + option.PadRight(firstColWidth) + line);
+                            firstLine = false;
+                        }
+                        else
+                        {
+                            // wrapped lines: 1-char indent + firstColWidth spaces + 1 space + text
+                            Console.WriteLine(new string(' ', firstColWidth + 2) + line);
+                        }
+                    }
+                }
+
+                Console.WriteLine(); // single newline between sections
+            }
+
+        }
+
+        /// <summary>
+        /// Given a block of text and a maximum line width, yields lines of text wrapped at word boundaries.
+        /// </summary>
+        /// <param name="text"></param>
+        /// <param name="maxWidth"></param>
+        /// <returns></returns>
+        private static IEnumerable<string> WrapText(string text, int maxWidth)
+        {
+            var words = text.Split(' ');
+            var line = new StringBuilder();
+
+            foreach (var word in words)
+            {
+                if (line.Length + word.Length + (line.Length > 0 ? 1 : 0) > maxWidth)
+                {
+                    yield return line.ToString();
+                    line.Clear();
+                }
+
+                if (line.Length > 0) line.Append(' ');
+                line.Append(word);
+            }
+
+            if (line.Length > 0) yield return line.ToString();
+        }
+
 
         /// <summary>
         /// Displays the application header and configuration details in the console.
@@ -85,23 +176,19 @@ namespace ListPorter
         /// copyright information,  and a brief description of its functionality. It also displays key configuration
         /// details such as the Plex  server connection, library ID, import path, and any additional flags or path
         /// rewriting options.</remarks>
-        /// <param name="args">The command-line arguments passed to the application, used for logging purposes.</param>
-        public static void ShowHeader(string[] args)
+        public static void ShowHeader()
         {
-            Console.WriteLine(new string('-', 70));
-            WriteLeftRight(
-                $"\x1b[1;33mListPorter v{VersionHelper.OutputVersion(Globals.ProgramVersion)}\x1b[0m",
-                $"Copyright © 2020-{DateTime.Now.Year} Richard Lawrence"
-            );
-            Console.WriteLine("\x1b[3mUpload standard or extended .m3u playlist files to Plex Media Server.\x1b[0m");
-            WriteLeftRight("GNU GPL v2 or later", "https://github.com/mrsilver76/listporter");
-            Console.WriteLine(new string('-', 70));
+            string line = new('─', 70);
+            Console.WriteLine(line);
+            Console.WriteLine($"ListPorter {VersionHelper.OutputVersion(Globals.ProgramVersion)}");
+            Console.WriteLine($"Copyright © 2020-{DateTime.Now.Year} Richard Lawrence");
+            Console.WriteLine("https://github.com/mrsilver76/listporter");
+            Console.WriteLine();
 
             // Prepare titles + content
             var items = new List<(string Title, string Value)>
             {
                 ("Plex server:", $"{(Globals.UsingSecureConnection ? "https://" : "http://")}{Globals.PlexHost}:{Globals.PlexPort}"),
-                ("Plex library ID:", Globals.PlexLibrary.ToString(CultureInfo.InvariantCulture)),
                 ("Import path:", Globals.PathToImport)
             };
             if (Globals.UsingPathRewriting)
@@ -116,10 +203,6 @@ namespace ListPorter
                     items.Add(("Base path:", string.IsNullOrEmpty(Globals.BasePath) ? "(not set)" : Globals.BasePath));
             }
 
-            // Flags
-            if (CommandLineParser.ParsedFlags.Count > 0)
-                items.Add(("Other flags:", string.Join(", ", CommandLineParser.ParsedFlags)));
-
             // Find longest title length
             int pad = items.Max(i => i.Title.Length) + 2;
 
@@ -127,44 +210,18 @@ namespace ListPorter
             foreach (var (title, value) in items)
                 Console.WriteLine($"{title.PadRight(pad)}{value}");
 
-            Console.WriteLine(new string('-', 70));
+            Console.WriteLine(line);
             Console.WriteLine();
 
             // Log details
-            LogEnvironmentInfo(args);
-        }
-
-        /// <summary>
-        /// Writes two strings, one aligned to the left and the other to the right, within a specified total width.
-        /// </summary>
-        /// <remarks>If the combined visible length of the <paramref name="left"/> and <paramref
-        /// name="right"/> strings  exceeds the <paramref name="totalWidth"/>, the strings are written directly next to
-        /// each other  with a single space in between. ANSI escape sequences (e.g., for text formatting) are ignored 
-        /// when calculating the visible length of the strings.</remarks>
-        /// <param name="left">The string to be displayed on the left side of the output.</param>
-        /// <param name="right">The string to be displayed on the right side of the output.</param>
-        /// <param name="totalWidth">The total width of the output, including both strings and any padding between them.  Defaults to 70 if not
-        /// specified.</param>
-        public static void WriteLeftRight(string left, string right, int totalWidth = 70)
-        {
-            // Regex to remove ANSI escape sequences
-            string ansiRegex = @"\x1B\[[0-9;]*m";
-
-            int visibleLeftLength = Regex.Replace(left, ansiRegex, "").Length;
-            int visibleRightLength = Regex.Replace(right, ansiRegex, "").Length;
-
-            if (visibleLeftLength + visibleRightLength >= totalWidth)
-                Console.WriteLine(left + " " + right);
-            else
-                Console.WriteLine(left + new string(' ', totalWidth - visibleLeftLength - visibleRightLength) + right);
+            LogEnvironmentInfo();
         }
 
         /// <summary>
         /// Output to the logs the environment information, such as .NET version, OS and architecture.
         /// Also includes the parsed command line arguments if any were provided.
         /// </summary>
-        /// <param name="args"></param>
-        private static void LogEnvironmentInfo(string[] args)
+        private static void LogEnvironmentInfo()
         {
             var dotnet = RuntimeInformation.FrameworkDescription;
             var os = RuntimeInformation.OSDescription.Trim();
@@ -173,8 +230,7 @@ namespace ListPorter
 
             Logger.Write($"Running {VersionHelper.OutputVersion(Globals.ProgramVersion)} on {dotnet} ({os}, {archName})", true);
 
-            if (args.Length > 0)
-                Logger.Write($"Parsed arguments: {string.Join(" ", args)}", true);
+            Logger.Write($"Command line: {Environment.CommandLine}", true);
         }
 
         /// <summary>
@@ -193,7 +249,7 @@ namespace ListPorter
             {
                 Console.WriteLine();
                 Console.ForegroundColor = ConsoleColor.Cyan;
-                Console.Write($"  ℹ️ A new version ({VersionHelper.OutputVersion(result.LatestVersion)}) is available!");
+                Console.WriteLine($"  ℹ️ A new version ({VersionHelper.OutputVersion(result.LatestVersion)}) is available!");
                 Console.ResetColor();
                 Console.WriteLine($" You are using {VersionHelper.OutputVersion(Globals.ProgramVersion)}");
                 Console.WriteLine($"     Get it from https://www.github.com/{gitHubRepo}/");
@@ -235,7 +291,7 @@ namespace ListPorter
             Console.WriteLine("    For more information, please read the FAQ:");
             Console.WriteLine("      https://github.com/mrsilver76/listporter/FAQ.md#fuzzy");
             
-            System.Environment.Exit(-1);
+            System.Environment.Exit(1);
         }
 
     }

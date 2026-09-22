@@ -23,8 +23,6 @@ namespace ListPorter
 {
     internal sealed class CommandLineParser
     {
-        public static List<string> ParsedFlags = [];
-
         /// <summary>
         /// Parses command line arguments.
         /// </summary>
@@ -41,7 +39,7 @@ namespace ListPorter
 
                 if (arg == "/?" || arg == "-h" || arg == "--help")
                     ConsoleOutput.DisplayUsage();
-                else if (arg == "-s" || arg == "--server" && i + 1 < args.Length)
+                else if ((arg == "-s" || arg == "--server") && i + 1 < args.Length)
                 {
                     string serverArg = args[i + 1];
                     i++; // Skip next argument as it's the value
@@ -78,12 +76,12 @@ namespace ListPorter
                         ConsoleOutput.DisplayUsage($"Invalid format of Plex host and port ({serverArg})");
                     }
                 }
-                else if (arg == "-t" || arg == "--token" && i + 1 < args.Length)
+                else if ((arg == "-t" || arg == "--token") && i + 1 < args.Length)
                 {
                     Globals.PlexToken = args[i + 1];
                     i++; // Skip next argument as it's the value
                 }
-                else if (arg == "-l" || arg == "--library" && i + 1 < args.Length)
+                else if ((arg == "-l" || arg == "--library") && i + 1 < args.Length)
                 {
                     if (int.TryParse(args[i + 1], out int level))
                     {
@@ -95,66 +93,43 @@ namespace ListPorter
                         ConsoleOutput.DisplayUsage("Invalid Plex library ID.");
                     }
                 }
-                else if (arg == "-i" || arg == "--import" && i + 1 < args.Length)
+                else if ((arg == "-i" || arg == "--import") && i + 1 < args.Length)
                 {
                     Globals.PathToImport = args[i + 1];
                     i++;
                 }
-                else if (arg == "-b" || arg == "--base-path" && i + 1 < args.Length)
+                else if ((arg == "-b" || arg == "--base-path") && i + 1 < args.Length)
                 {
                     Globals.BasePath = args[i + 1];
                     i++;
                 }
-                else if (arg == "-d" || arg == "--delete-all")
-                {
+                // --delete-all was the original option, but it was incorrectly documented as --delete in the usage instructions. Both are now supported.
+                else if (arg == "-d" || arg == "--delete" || arg == "--delete-all")  
                     Globals.DeleteAll = true;
-                    ParsedFlags.Add("Delete-all");
-                }
                 else if (arg == "-m" || arg == "--mirror")
-                {
                     Globals.MirrorPlaylists = true;
-                    ParsedFlags.Add("Mirror");
-                }
-                else if (arg == "-f" || arg == "--find" && i + 1 < args.Length)
+                else if ((arg == "-f" || arg == "--find") && i + 1 < args.Length)
                 {
                     Globals.FindText = args[i + 1];
                     i++;
                 }
-                else if (arg == "-r" || arg == "--replace" && i + 1 < args.Length)
+                else if ((arg == "-r" || arg == "--replace") && i + 1 < args.Length)
                 {
                     Globals.ReplaceText = args[i + 1];
                     i++;
                 }
                 else if (arg == "-u" || arg == "--unix" || arg == "--linux")  // Allow --linux as an alias for --unix
-                {
                     Globals.PathStyleOption = Globals.PathStyle.ForceLinux;
-                    ParsedFlags.Add("Unix");
-                }
                 else if (arg == "-w" || arg == "--windows")
-                {
                     Globals.PathStyleOption = Globals.PathStyle.ForceWindows;
-                    ParsedFlags.Add("Windows");
-                }
                 else if (arg == "-v" || arg == "--verbose")
-                {
                     Globals.VerboseMode = true;
-                    ParsedFlags.Add("Verbose");
-                }
                 else if (arg == "-x" || arg == "--exact-only")  // Disable fuzzy matching
-                {
                     Globals.UseFuzzyMatching = false;
-                    ParsedFlags.Add("Exact-only");
-                }
                 else if (arg == "-k" || arg == "--update")  // Update Plex library before importing
-                {
                     Globals.UpdateLibrary = true;
-                    ParsedFlags.Add("Update");
-                }
                 else if (arg == "-nc" || arg == "--no-check")
-                {
                     Globals.GitHubVersionCheck = false;
-                    ParsedFlags.Add("No-check");
-                }
 
                 else if (arg[0] == '/' || arg[0] == '-')
                     ConsoleOutput.DisplayUsage($"Unknown option: {arg}");
@@ -175,9 +150,6 @@ namespace ListPorter
         {
             if (string.IsNullOrEmpty(Globals.PlexToken))
                 ConsoleOutput.DisplayUsage("Missing Plex token (-t)");
-
-            if (Globals.PlexLibrary < 0)
-                ConsoleOutput.DisplayUsage("Missing Plex library ID (-l)");
 
             if (string.IsNullOrEmpty(Globals.PathToImport))
                 ConsoleOutput.DisplayUsage("Missing path or filename of playlists to import (-i)");
