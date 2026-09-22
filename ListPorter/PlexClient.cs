@@ -302,7 +302,7 @@ namespace ListPorter
                 else
                     cleanHit++; // Increment the counter if no active refresh/update found
 
-                if (sw.Elapsed.Seconds > 60 && cleanHit < 2 && !waitingMessage)
+                if (sw.Elapsed.TotalSeconds > 60 && cleanHit < 2 && !waitingMessage)
                 {
                     Logger.Write($"Status update after 1 minute: still waiting for library to finish updating...");
                     sw.Stop();
@@ -583,7 +583,8 @@ namespace ListPorter
         /// Deletes all items in a Plex playlist without deleting the playlist itself.
         /// </summary>
         /// <param name="ratingKey">The ratingKey of the Plex playlist to clear.</param>
-        public static void DeleteAllItemsInPlaylist(long ratingKey)
+        /// <returns>True if the items were deleted successfully, false if the DELETE request failed.</returns>
+        public static bool DeleteAllItemsInPlaylist(long ratingKey)
         {
             // URL to delete all items from the playlist
             string clearPlaylistUrl = $"/playlists/{ratingKey}/items";
@@ -593,10 +594,12 @@ namespace ListPorter
             {
                 GetHttpResponse(HttpMethod.Delete, clearPlaylistUrl);
                 Logger.Write($"All items in playlist {ratingKey} have been deleted.", true);
+                return true;
             }
             catch (Exception ex)
             {
                 Logger.Write($"Failed to delete items from playlist {ratingKey}: {ex.Message}");
+                return false;
             }
         }
 
@@ -611,16 +614,12 @@ namespace ListPorter
             {
                 string deleteUrl = $"/playlists/{ratingKey}";
                 GetHttpResponse(HttpMethod.Delete, deleteUrl);
+                Logger.Write($"Deleted playlist with ratingKey {ratingKey} from Plex.", true);
+                PlexService.TotalPlaylistsDeleted++;
             }
             catch (Exception ex)
             {
                 Logger.Write($"Failed to delete playlist with ratingKey {ratingKey}: {ex.Message}");
-                return;
-            }
-            finally
-            {
-                Logger.Write($"Deleted playlist with ratingKey {ratingKey} from Plex.", true);
-                PlexService.TotalPlaylistsDeleted++;
             }
         }
 
@@ -708,7 +707,9 @@ namespace ListPorter
             Console.WriteLine("     ID    Name");
             Console.WriteLine("    ------------------------------");
 
-            musicLibraries.Sort((a, b) => a.Id.CompareTo(b.Id)); // Sort by ID for better readability
+            // Sort by ID for better readability
+            musicLibraries.Sort((a, b) => a.Id.CompareTo(b.Id)); 
+
             foreach (var (Id, Name) in musicLibraries)
                 Console.WriteLine($"    {Id.ToString(CultureInfo.InvariantCulture),3}    {Name}");
 
