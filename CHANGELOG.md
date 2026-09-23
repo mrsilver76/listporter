@@ -1,11 +1,13 @@
 # Version history
 
-## 1.2.0 (xx)
+## 1.2.0 (xx September 2026)
 - Added automatic detection of the Plex music library. Use of `-l` (`--library`) is no longer required when the server has only one music library. If you have more than one library, ListPorter will list them so you can add `-l` to your command line.
+- Fixed an issue where `--mirror` could incorrectly delete a playlist if the contents of the `m3u` file couldn't be properly loaded.  
 - Fixed a bug where single-letter arguments requiring a value (e.g. `-s` or `-t`) could be incorrectly parsed.
 - Improved the formatting of the help output, which now word-wraps based on the terminal width.
 - Updated logging to report the full command line rather than just arguments.
 - Plex usernames written to the log file are now partially masked if they look like an email address (console output is unaffected).
+- Fixed an issue where, if a request to clear a playlist on Plex failed, you'd end up with duplicated tracks.
 - Publish script was updated to allow building for a specific architecture.
 - Fixed an issue where ListPorter would terminate with the wrong error code (`-1` instead of `1`). This made it difficult for scripts to identify when ListPorter fails to complete.
 - Fixed `--delete` not working. The code only recognised `--delete-all` which hadn't been documented, so now both options can be used.
