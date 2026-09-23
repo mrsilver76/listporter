@@ -1,20 +1,21 @@
 # Version history
 
-## 1.2.0 (xx September 2026)
+## 1.2.0 (23 September 2026)
 - Added automatic detection of the Plex music library. Use of `-l` (`--library`) is no longer required when the server has only one music library. If you have more than one library, ListPorter will list them so you can add `-l` to your command line.
-- Fixed an issue where `--mirror` could incorrectly delete a playlist if the contents of the `m3u` file couldn't be properly loaded.  
-- Fixed a bug where single-letter arguments requiring a value (e.g. `-s` or `-t`) could be incorrectly parsed.
 - Improved the formatting of the help output, which now word-wraps based on the terminal width.
 - Updated logging to report the full command line rather than just arguments.
 - Plex usernames written to the log file are now partially masked if they look like an email address (console output is unaffected).
-- Fixed an issue where, if a request to clear a playlist on Plex failed, you'd end up with duplicated tracks.
-- Publish script was updated to allow building for a specific architecture.
-- Fixed an issue where ListPorter would terminate with the wrong error code (`-1` instead of `1`). This made it difficult for scripts to identify when ListPorter fails to complete.
-- Fixed `--delete` not working. The code only recognised `--delete-all` which hadn't been documented, so now both options can be used.
-- Cleaned up various pieces of code flagged by Visual Studio's code analysis (simplifications and style).
 - Simplified the startup banner, by removing coloured text and reduced the amount of information shown before playlists start processing.
+- Fixed an issue where `--mirror` could incorrectly delete a playlist if the contents of the `m3u` file couldn't be properly loaded.
+- Fixed an issue where, if a request to clear a playlist on Plex failed, you'd end up with duplicated tracks.
+- Fixed `--delete` not working. The code only recognised `--delete-all` which hadn't been documented, so now both options can be used.
+- Fixed an issue where ListPorter would terminate with the wrong error code (`-1` instead of `1`). This made it difficult for scripts to identify when ListPorter fails to complete.
+- Fixed a bug where single-letter arguments requiring a value (e.g. `-s` or `-t`) could be incorrectly parsed.
+- Fixed an issue where a "still waiting" message was not being displayed when waiting for a slow Plex library update.
 - FAQs updated with a new entry explaining why you might be asked to pick a music library.
 - Version history moved from `README.md` into a new `CHANGELOG.md` file.
+- Cleaned up various pieces of code flagged by Visual Studio's code analysis (simplifications and style).
+- Publish script was updated to allow building for a specific architecture.
 
 ## 1.1.2 (16 March 2026)
 - Fixed a bug where paths in playlists with accented or special characters could fail to match to content already in Plex due to UTF8 normalisation differences.
