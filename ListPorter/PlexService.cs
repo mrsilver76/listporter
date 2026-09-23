@@ -62,7 +62,12 @@ namespace ListPorter
             // Step 1: Load the m3u playlist into the importedPlaylist
             bool result = PlaylistImporter.LoadM3UPlaylist(m3uFilePath);
             if (result == false)
+            {
+                // Even though it failed, we add this to processed list. This is so that
+                // using --mirror doesn't delete it
+                ProcessedPlaylistTitles.Add(PlaylistImporter.ImportedPlaylistTitle); 
                 return;
+            }
 
             // Step 2: Try to find the Plex playlist by name
             long ratingKey = GetRatingKeyFromPlaylistName(PlaylistImporter.ImportedPlaylistTitle);
@@ -91,7 +96,14 @@ namespace ListPorter
                 }
                 // Content isn't identical, so easier approach is to just remove everything
                 // already there and then add it again
-                PlexClient.DeleteAllItemsInPlaylist(ratingKey);
+                if (!PlexClient.DeleteAllItemsInPlaylist(ratingKey))
+                {
+                    Logger.Write($"Skipping update of playlist '{PlaylistImporter.ImportedPlaylistTitle}' because clearing its existing items failed.");
+                    // Even though it failed, we add this to processed list. This is so that
+                    // using --mirror doesn't delete it
+                    ProcessedPlaylistTitles.Add(PlaylistImporter.ImportedPlaylistTitle); 
+                    return;
+                }
             }
 
             // Step 4: Update the playlist content on Plex
@@ -99,6 +111,7 @@ namespace ListPorter
                 Logger.Write($"Adding {GrammarHelper.Pluralise(Globals.ImportedPlaylist.Count, "item", "items")} to playlist: {PlaylistImporter.ImportedPlaylistTitle}");
             else
                 Logger.Write($"Updating {GrammarHelper.Pluralise(Globals.ImportedPlaylist.Count, "item", "items")} in playlist: {PlaylistImporter.ImportedPlaylistTitle}");
+
             PlexClient.AddTracksToPlaylist(ratingKey);
             ProcessedPlaylistTitles.Add(PlaylistImporter.ImportedPlaylistTitle); // Add to processed list
             if (wasCreated)
@@ -182,7 +195,7 @@ namespace ListPorter
             if (fuzzyConflictCount > 0)
             {
                 ConsoleOutput.DisplayFuzzyMatchConflicts(fuzzyConflictCount);
-                System.Environment.Exit(-1);
+                System.Environment.Exit(1);  // Unreachable but included for clarity and safety
             }
 
             // If we are here then we have built the map successfully

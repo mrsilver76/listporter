@@ -83,19 +83,18 @@ Each release includes the following files (`x.x.x` denotes the version number):
 
 ## 🚀 Quick start guide
 
-**This is the simplest and most common way to use ListPorter.** It works across platforms, refreshes the library before starting and uses fuzzy matching to automatically align playlist paths with your Plex library.
+**This is the simplest and most common way to use ListPorter.** It works across platforms, automatically finds the (single) music library, refreshes the library before starting and uses fuzzy matching to automatically align playlist paths with your Plex library.
 
 >[!TIP]
 >To ensure Plex contains only the playlists in your import folder (i.e. remove any that aren’t there), add the `--mirror` (`-m`) option.
 
 ```
-ListPorter -s 127.0.0.1 -t ABCDEFG -l 8 -i "C:\Playlists" -k
+ListPorter -s 127.0.0.1 -t ABCDEFG -i "C:\Playlists" -k
 
-ListPorter --server 127.0.0.1 --token ABCDEFG --library 8 --import "C:\Playlists" --update
+ListPorter --server 127.0.0.1 --token ABCDEFG --import "C:\Playlists" --update
 ```
 
-The example below shows a more advanced scenario suitable when fuzzy matching isn’t enough. It demonstrates how to explicitly rewrite paths and convert formats when importing playlists created on one platform (e.g. Windows) into a Plex server running on another (e.g. Linux).
-Note that `--find` (`-f`) uses forward slashes because `--linux` (`-l`) converts backslashes to forward slashes.
+The example below shows a more advanced scenario suitable when you have more than one music library (ID `10`) and fuzzy matching isn’t enough. It demonstrates how to explicitly rewrite paths and convert formats when importing playlists created on one platform (e.g. Windows) into a Plex server running on another (e.g. Linux). Note that `--find` (`-f`) uses forward slashes because `--linux` (`-l`) converts backslashes to forward slashes.
 
 >[!CAUTION]
 >This example deletes existing Plex playlists before import. Only use `--delete` (`-d`) if you're sure you want to replace everything..
@@ -111,7 +110,7 @@ ListPorter --server pimachine --token ABCDEFG --library 10 --import "C:\Playlist
 ListPorter is a command-line tool. Run it from a terminal or command prompt, supplying all options and arguments directly on the command line. Logs with detailed information are also written and you can find the log file location using `--help` (`-h`).
 
 ```
-ListPorter -s <address>[:<port>] -t <token> -l <library> -i <path> [options]
+ListPorter -s <address>[:<port>] -t <token> [-l <library>] -i <path> [options]
 ```
 
 ### Mandatory arguments
@@ -127,23 +126,32 @@ ListPorter -s <address>[:<port>] -t <token> -l <library> -i <path> [options]
 - **`-t <token>`, `--token <token>`**   
   Plex authentication token. Required to interact with your Plex server. To find out your token, see [Plex's guide](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/).
 
->[!NOTE]
->If you want to upload playlists for a specific [Plex Home user](https://support.plex.tv/articles/203815766-what-is-plex-home/), **you must use the access token associated with that user**, not the admin account. Refer to [this FAQ entry](FAQ.md#can-i-import-a-playlist-directly-to-a-specific-plex-home-user-instead-of-the-mainadmin-account) for detailed steps on obtaining a Plex Home user token.
+  If you want to upload playlists for a specific [Plex Home user](https://support.plex.tv/articles/203815766-what-is-plex-home/), **you must use the access token associated with that user**, not the admin account. Refer to [this FAQ entry](FAQ.md#can-i-import-a-playlist-directly-to-a-specific-plex-home-user-instead-of-the-mainadmin-account) for detailed steps on obtaining a Plex Home user token.
 
 >[!CAUTION]
 >You should never share your Plex token with anyone!
 
-- **`-l <library>`, `--library <library>`**   
-  Plex library ID that contains your music. This must be a _Music_ library. To find your library ID, go into the Plex web client, hover the mouse over the library you want and look at the URL. It will end with `source=xx` where `xx` is the library ID.
-
 - **`-i <path>`, `--import <path>`**   
-  Path to a single .m3u file or a directory containing multiple .m3u files.
+  Path to a single `.m3u` or `.m3u8` file, or a directory containing playlist files to import.
 
-### Optional arguments
-  
-#### Playlist sync options
+### Library options
 
-These options will remove playlists from your Plex server under specific conditions. Only playlists that are manual (not smart/dynamic), contain audio tracks only and belong entirely to the music library specified by `--library` will ever be deleted. No other content (such as music files, metadata or non-matching playlists) is modified or removed..
+- **`-l <library>`, `--library <library>`**  
+  Optional Plex music library ID. If your Plex server has only one Music library, ListPorter will automatically detect and use it, so this option is not required. If your server has multiple music libraries, ListPorter will list each library with its ID and name and ask you to change your command line to specify which one to use.
+
+### Playlist sync options
+
+These options will remove playlists from your Plex server under specific conditions.
+
+Only playlists meeting **all** of the following criteria will ever be deleted
+
+- The playlist is manual, not smart/dynamic.
+- The playlist contains audio tracks only.
+- The playlist belongs entirely to the selected music library.
+
+The selected library is either the library specified with `--library` or, when this is not supplied, the single music library automatically detected by ListPorter.
+
+No other content, such as music files, metadata or non-matching playlists, is modified or removed.
 
 - **`-d`, `--delete`**   
   Deletes all existing playlists in the specified Plex music library before importing any new ones.
@@ -154,7 +162,7 @@ These options will remove playlists from your Plex server under specific conditi
 > [!CAUTION]
 > Be careful when using `--mirror` with a single file: this will cause all other playlists in the library to be removed, keeping only the one you provided.
 
-#### Path rewriting options
+### Path rewriting options
 
 ListPorter tries to match each file path in your playlist with the paths Plex has stored. It first attempts an exact match. If that fails, it automatically uses fuzzy matching, based on the assumption that music files are organised with a structure of `artist/album/track` or `artist\album\track`. It compares only the last three parts of each path, ignoring drive letters, shares, or deeper folder structures.
 
@@ -198,9 +206,8 @@ Disables fuzzy matching and any automatic path adjustments. Only exact, case-ins
 
 - **`-nc`, `--no-check`**  
   Disables GitHub version checks for GroupMachine.
-
->[!NOTE]
->Version checks occur at most once every 7 days. ListPorter connects only to [this URL](https://api.github.com/repos/mrsilver76/listporter/releases/latest) to retrieve version information. No data about you, your music library or your Plex server is shared with the author or GitHub - you can verify this yourself by reviewing `GitHubVersionChecker.cs`
+  
+  Version checks occur at most once every 7 days. ListPorter connects only to [this URL](https://api.github.com/repos/mrsilver76/listporter/releases/latest) to retrieve version information. No data about you, your music library or your Plex server is shared with the author or GitHub - you can verify this yourself by reviewing `GitHubVersionChecker.cs`
 
 - **`-v`, `--verbose`**  
   Outputs additional information to the log files to aid in debugging.
@@ -214,7 +221,7 @@ The program will only recognise and process playlists on your Plex server that m
 
 1. All items in the playlist must be audio - playlists containing video or mixed content are ignored.
 2. The playlist is manual, not a smart/dynamic playlist.
-3. All audio tracks in the playlist belong to the library ID provided via `--library`.
+3. All audio tracks in the playlist belong to the selected music library.
 
 These rules apply to all playlist-related operations, including `--mirror` and `--delete`.
 
@@ -240,6 +247,7 @@ Logging and debugging
 - [Where are the logs stored? What do they show?](FAQ.md#where-are-the-logs-stored-what-do-they-show)
 - [I'm getting an error about fuzzy maching conflicts](FAQ.md#im-getting-an-error-about-fuzzy-matching-conflicts)
 - [Why do I see a warning that some items failed to match the Plex database?](FAQ.md#why-do-i-see-a-warning-that-some-items-failed-to-match-the-plex-database)
+- [Why am I being asked to pick a music library?](FAQ.md#why-am-i-being-asked-to-pick-a-music-library)
 
 Plex interaction and playlist behavior
 
@@ -262,83 +270,4 @@ ListPorter currently meets the needs it was designed for, and no major new featu
 
 ## 🕰️ Version history
 
-### 1.1.2 (16 March 2026)
-- Fixed a bug where paths in playlists with accented or special characters could fail to match to content already in Plex due to UTF8 normalisation differences.
-- Fixed a bug where using `--unix` or `--windows` without `--find` or `--base-path` would incorrectly disable fuzzy matching.
-- Fixed a bug where some command line options weren't being correctly noted in the console/terminal output.
-- Updated the publish script to use `--no-self-contained` as identifed by dotnet/sdk#51888.
-- Updated copyright.
-
-### 1.1.1 (06 October 2025)
-- Output now confirms which Plex account or managed user the playlists will be uploaded to, based on the token provided.
-- Fixed bug where logs were not being saved in the correct location.
-- Fixed bug where Plex token was being incorrectly saved in the logs.
-
-
-### 1.1.0 (24 September 2025)
-- Added `-k` (`--update`) to force Plex to scan the library prior to importing.
-- Logger now includes OS information to help with troubleshooting across platforms.
-- All fuzzy match clashes during the database build are now logged, not just the first.
-- When fuzzy match clashes occur, ListPorter now exits with an error and a link to the FAQ.
-- Supplying an invalid Plex library ID now returns a clear error, instead of crashing.
-- `.m3u` track paths incorrectly prefixed with `file://` or `file-relative://` are now cleaned automatically.
-- Legacy log folders named "Plex Playlist Uploader" and "PlexPU" are no longer deleted.
-- Added `-nc` (`--no-check`) to disable GitHub version checking.
-- Added header displaying key settings and command line options used.
-- Updated GitHub version checking code and publish Powershell script.
-- Cleaned up various pieces of code (analyzer suggestions regarding naming, simplifications, and style)
-- FAQs have been moved to a separate page to reduce clutter in the main README.
-
-### 1.0.0 (27 June 2025)
-- 🏁 Declared as the first stable release.
-- Added fuzzy matching logic to improve playlist-to-Plex track matching when exact paths don’t align.
-- Added support for secure connections (HTTPS) when communicating with Plex servers.
-- Added `--base-path` (`-b)` option to prepend a base path for playlists using relative paths.
-- Added `--linux` as an alias for `--unix`.
-- Improved `--help` formatting for better readability on 80-character terminals.
-- Added contextual tips for import errors to assist troubleshooting without needing logs.
-- Reduced API page size to 1000 to prevent Plex from generating warning entries.
-- Path matching and rewriting issues are now surfaced to users (max 5 per playlist).
-- Replaced `Publish.bat` with a streamlined `Publish.ps1` script for building executables.
-- Added `linux-arm` builds for compatibility with Raspberry Pi 3 devices.
-- Added additional logging to aid in debugging.
-- Added statistics showing playlists skipped, created, updated and deleted.
-- Fixed bug where a folder with no m3u or m3u8 files would not generate an appropriate error.
-- Made output less spammy whilst loading and parsing m3u files. 
-- Added GNU GPL v2 license notice to source files for clarity.
-
-### 0.9.3 (24 May 2025)
-- Fixed version checker incorrectly reporting updates available when already on the latest version.
-
-### 0.9.2 (24 May 2025)
-- Updated track discovery to use a more comprehensive Plex API endpoint, resolving issues where some valid items (like orphaned tracks) were previously omitted. Thanks to u/AnalogWalrus and u/spikeygg for spotting and helping to debug.
-- Improved performance by over 30% through fewer API calls and reduced track lookups during playlist processing.
-- Added hostname and port number of Plex server during connection test.
-- Cleaned up version number handling, ensuring consistency and correct handling of pre-releases.
-- Improved verbose mode to help in debugging issues.
-- Added details about `--verbose` to `--help`.
-- Cleaned up various pieces of code.
-
-### 0.9.1 (19 May 2025)
-- Renamed to "ListPorter" to avoid any potential issue with the Plex legal team.
-- Fixed bug that meant that the Plex token and machine ID could end up in the logs.
-- Log folders generated by 0.9.0 are removed, as they can contain token data.
-- Tracks marked as deleted (but not removed) are now considered for playlists.
-- Fixed logs to report more useful information.
-- Fixed copyright and minor number formatting.
-- Added error catching for some file operations.
-- Changed incorrect scary messaging when there are empty playlists.
-- Fixed terrible error messages when unable to connect to Plex server.
-- Added links to Plex support articles for common connection issues.
-- Added 10 second notification to avoid people thinking that the program had locked up.
-- Updated `Publish.bat` to include missing osx-x64 (macOS on Intel) build.
-
-### 0.9.0 (16 May 2025)
-- Initial release, a C# port from [iTunes Playlist Exporter](https://github.com/mrsilver76/itunes_playlist_exporter).
-- Now cross-platform, with support for Windows, Linux (x64 and ARM) and macOS.
-- Removed iTunes exporting functionality, now handled by a separate tool called [TuneLift](https://github.com/mrsilver76/tunelift).
-- Added automatic version checking with update notifications.
-- Playlists are only updated if they have changed, eliminating the need to delete and re-import everything.
-- Added `--mirror` option to remove playlists from Plex that no longer exist in the input directory.
-- Modified playlists retain their original playlist ID, so external players like Sonos can continue to reference them.
-
+See [CHANGELOG.md](CHANGELOG.md)

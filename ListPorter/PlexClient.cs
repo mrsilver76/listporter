@@ -19,6 +19,7 @@
 
 using System.Diagnostics;
 using System.Globalization;
+using System.Numerics;
 using System.Text;
 using System.Xml.Linq;
 
@@ -301,15 +302,14 @@ namespace ListPorter
                 else
                     cleanHit++; // Increment the counter if no active refresh/update found
 
-                if (sw.Elapsed.Seconds > 60 && cleanHit < 2 && !waitingMessage)
+                if (sw.Elapsed.TotalSeconds > 60 && cleanHit < 2 && !waitingMessage)
                 {
-                    Logger.Write($"Status update after 1 minute: still waiting for library to finish updating...");
-                    sw.Stop();
+                    Logger.Write($"Status update after 1 minute: still waiting...");
                     waitingMessage = true; // Set the flag to avoid repeating this message
                 }
             }
 
-            Logger.Write($"Plex library ID {Globals.PlexLibrary} has been updated successfully.");
+            Logger.Write($"Plex library ID {Globals.PlexLibrary} finished updating after {sw.Elapsed.TotalSeconds:F0} seconds.");
         }
 
         /// <summary>
@@ -582,7 +582,8 @@ namespace ListPorter
         /// Deletes all items in a Plex playlist without deleting the playlist itself.
         /// </summary>
         /// <param name="ratingKey">The ratingKey of the Plex playlist to clear.</param>
-        public static void DeleteAllItemsInPlaylist(long ratingKey)
+        /// <returns>True if the items were deleted successfully, false if the DELETE request failed.</returns>
+        public static bool DeleteAllItemsInPlaylist(long ratingKey)
         {
             // URL to delete all items from the playlist
             string clearPlaylistUrl = $"/playlists/{ratingKey}/items";
@@ -592,10 +593,12 @@ namespace ListPorter
             {
                 GetHttpResponse(HttpMethod.Delete, clearPlaylistUrl);
                 Logger.Write($"All items in playlist {ratingKey} have been deleted.", true);
+                return true;
             }
             catch (Exception ex)
             {
                 Logger.Write($"Failed to delete items from playlist {ratingKey}: {ex.Message}");
+                return false;
             }
         }
 
@@ -610,17 +613,117 @@ namespace ListPorter
             {
                 string deleteUrl = $"/playlists/{ratingKey}";
                 GetHttpResponse(HttpMethod.Delete, deleteUrl);
+                Logger.Write($"Deleted playlist with ratingKey {ratingKey} from Plex.", true);
+                PlexService.TotalPlaylistsDeleted++;
             }
             catch (Exception ex)
             {
                 Logger.Write($"Failed to delete playlist with ratingKey {ratingKey}: {ex.Message}");
-                return;
-            }
-            finally
-            {
-                Logger.Write($"Deleted playlist with ratingKey {ratingKey} from Plex.", true);
-                PlexService.TotalPlaylistsDeleted++;
             }
         }
+
+        /// <summary>
+        /// Locates the Plex music library by querying the Plex server for all library sections and identifying the one defined as music.
+        /// If there is more than one, then advise the user that they much use -l (or --library) and then list all IDs and
+        /// associated library name to help them decide. If the user has already specified a library, then it is validated
+        /// to ensure it exists and is a music library.
+        /// </summary>
+        /// <returns></returns>
+        public static void LocatePlexMusicLibrary()
+        {
+            string urlPath = "/library/sections";
+            string responseContent = GetHttpResponse(HttpMethod.Get, urlPath);
+
+            // Walk through the response making a list of all library IDs, their respective name and type
+
+            var container = XElement.Parse(responseContent);
+            var allLibraries = new List<(int Id, string Name, string Type)>();
+
+            foreach (var directory in container.Elements("Directory"))
+            {
+                string? keyStr = directory.Attribute("key")?.Value;
+                string? title = directory.Attribute("title")?.Value;
+                string? type = directory.Attribute("type")?.Value;
+
+                if (string.IsNullOrEmpty(keyStr) || !int.TryParse(keyStr, out int key) || string.IsNullOrEmpty(title) || string.IsNullOrEmpty(type))
+                    continue;
+
+                allLibraries.Add((key, title, type));
+            }
+
+            // If the user specified a library, check that it exists and is a music library
+
+            if (Globals.PlexLibrary != -1)
+            {
+                var chosen = allLibraries.FirstOrDefault(l => l.Id == Globals.PlexLibrary);
+
+                if (chosen.Name == null)
+                {
+                    Logger.Write($"Error: Plex library ID {Globals.PlexLibrary} does not exist on the Plex server.");
+                    Environment.Exit(1);
+                }
+
+                if (chosen.Type != "artist")
+                {
+                    Logger.Write($"Error: Plex library ID {Globals.PlexLibrary} ({chosen.Name}) is not a music library.");
+                    Environment.Exit(1);
+                }
+
+                // Library exists and is a music library, so we can continue
+                Logger.Write($"Using specified Plex library ID {Globals.PlexLibrary} ({chosen.Name})");
+
+                // Let the user know if specifying the library was unnecessary
+                if (allLibraries.Count(l => l.Type == "artist") == 1)
+                    Logger.Write("Note: Plex only has one music library, specifying -l (or --library) is not necessary.");
+
+                return;
+            }
+
+            // If there are no music libraries then we can't continue
+
+            var musicLibraries = allLibraries.Where(l => l.Type == "artist").Select(l => (l.Id, l.Name)).ToList();
+            if (musicLibraries.Count == 0)
+            {
+                Logger.Write("Error: No music libraries were found on the Plex server.");
+                Environment.Exit(1);
+            }
+
+            // If there is only 1 music library then use that
+
+            if (musicLibraries.Count == 1)
+            {
+                Logger.Write($"Found Plex library ID {musicLibraries[0].Id} ({musicLibraries[0].Name})");
+                Globals.PlexLibrary = musicLibraries[0].Id;
+                return;
+            }
+
+            // If there is more than 1 library then we need to tell the user to specify which one to use
+            // and then list all the IDs and names
+
+            Console.WriteLine();
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine(" ⚠️ Warning: More than one music library was found on Plex!");
+            Console.ResetColor();
+            Console.WriteLine();
+            Console.WriteLine("    You need to specify which library to use with the -l (or");
+            Console.WriteLine("     --library) option. Available libraries are:");
+            Console.WriteLine();
+            Console.WriteLine("     ID    Name");
+            Console.WriteLine("    ------------------------------");
+
+            // Sort by ID for better readability
+            musicLibraries.Sort((a, b) => a.Id.CompareTo(b.Id)); 
+
+            foreach (var (Id, Name) in musicLibraries)
+                Console.WriteLine($"    {Id.ToString(CultureInfo.InvariantCulture),3}    {Name}");
+
+            Console.WriteLine();
+            Console.WriteLine("    For more information, please read the FAQ:");
+            Console.WriteLine("      https://github.com/mrsilver76/listporter/FAQ.md#multiplelibraries");
+
+            Environment.Exit(1);
+        }
+
+
     }
 }
