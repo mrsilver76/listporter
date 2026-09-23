@@ -304,13 +304,12 @@ namespace ListPorter
 
                 if (sw.Elapsed.TotalSeconds > 60 && cleanHit < 2 && !waitingMessage)
                 {
-                    Logger.Write($"Status update after 1 minute: still waiting for library to finish updating...");
-                    sw.Stop();
+                    Logger.Write($"Status update after 1 minute: still waiting...");
                     waitingMessage = true; // Set the flag to avoid repeating this message
                 }
             }
 
-            Logger.Write($"Plex library ID {Globals.PlexLibrary} has been updated successfully.");
+            Logger.Write($"Plex library ID {Globals.PlexLibrary} finished updating after {sw.Elapsed.TotalSeconds:F0} seconds.");
         }
 
         /// <summary>
@@ -672,6 +671,11 @@ namespace ListPorter
 
                 // Library exists and is a music library, so we can continue
                 Logger.Write($"Using specified Plex library ID {Globals.PlexLibrary} ({chosen.Name})");
+
+                // Let the user know if specifying the library was unnecessary
+                if (allLibraries.Count(l => l.Type == "artist") == 1)
+                    Logger.Write("Note: Plex only has one music library, specifying -l (or --library) is not necessary.");
+
                 return;
             }
 
