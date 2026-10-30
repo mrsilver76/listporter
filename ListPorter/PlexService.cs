@@ -17,6 +17,9 @@
  * < https://www.gnu.org/licenses/>.
  */
 
+using System.Globalization;
+using System.Text;
+
 namespace ListPorter
 {
     /// <summary>
@@ -47,8 +50,14 @@ namespace ListPorter
         private static HashSet<string> ProcessedPlaylistTitles { get; set; } = new(StringComparer.OrdinalIgnoreCase);
         /// <summary>Fuzzy paths for matching against the Plex library</summary>
         private static readonly Dictionary<string, long> _fuzzyPathMap = [];
+        /// <summary>Maps normalized artist/title combinations to the Plex tracks that share them</summary>
+        private static readonly Dictionary<string, List<Globals.TrackInfo>> _metadataMap = [];
+        /// <summary>Maps normalized track titles to the Plex tracks that share them (used when no artist is available)</summary>
+        private static readonly Dictionary<string, List<Globals.TrackInfo>> _titleOnlyMap = [];
         /// <summary>Characters used as path separators</summary>
         private static readonly char[] _pathSeparators = ['/', '\\'];
+        /// <summary>Tolerance (in seconds) when comparing the duration in an #EXTINF line with the duration stored by Plex</summary>
+        private const int DurationToleranceSeconds = 2;
 
 
         /// <summary>
@@ -200,6 +209,228 @@ namespace ListPorter
 
             // If we are here then we have built the map successfully
             Logger.Write($"Fuzzy path map built with {_fuzzyPathMap.Count} entries", true);
+        }
+
+        /// <summary>
+        /// Builds a map of normalized artist/title combinations (and, as a fallback, normalized track
+        /// titles) to the tracks in the Plex library. This allows tracks in a playlist to be matched
+        /// by the artist and title stored in `#EXTINF` lines when their file paths cannot be matched.
+        /// Unlike the fuzzy path map, duplicate keys are allowed: when they occur the duration and
+        /// album of the track are used to pick the correct match.
+        /// </summary>
+        public static void BuildMetadataMap()
+        {
+            if (!Globals.UseMetadataMatching)
+            {
+                Logger.Write("Artist/title metadata matching is disabled.");
+                return;
+            }
+
+            Logger.Write("Building artist/title metadata map...");
+
+            _metadataMap.Clear();
+            _titleOnlyMap.Clear();
+
+            foreach (var track in Globals.PlexTrackList)
+            {
+                if (string.IsNullOrWhiteSpace(track.Title))
+                    continue;
+
+                // Index under the album artist. For compilation albums this is often
+                // "Various Artists", so also index under the track artist (if different).
+                if (track.Artist.Length > 0)
+                    AddToMetadataMap(_metadataMap, $"{NormalizeMetadata(track.Artist)}|{NormalizeMetadata(track.Title)}", track);
+
+                if (track.TrackArtist.Length > 0)
+                    AddToMetadataMap(_metadataMap, $"{NormalizeMetadata(track.TrackArtist)}|{NormalizeMetadata(track.Title)}", track);
+
+                // Also index by title only, as a last resort for #EXTINF lines which don't provide an artist
+                AddToMetadataMap(_titleOnlyMap, NormalizeMetadata(track.Title), track);
+            }
+
+            int ambiguousCombinations = _metadataMap.Values.Count(list => list.DistinctBy(t => t.RatingKey).Count() > 1);
+            Logger.Write($"Artist/title metadata map built with {GrammarHelper.Pluralise(_metadataMap.Count, "entry", "entries")}" +
+                         (ambiguousCombinations > 0 ? $" ({GrammarHelper.Pluralise(ambiguousCombinations, "combination", "combinations")} of these are ambiguous and will need the track duration or album to disambiguate)" : string.Empty), true);
+            Logger.Write($"Title-only metadata map built with {GrammarHelper.Pluralise(_titleOnlyMap.Count, "entry", "entries")}", true);
+        }
+
+        /// <summary>
+        /// Finds the Plex `ratingKey` of a track by matching the artist and title text from an
+        /// `#EXTINF` line (e.g. "Kool & The Gang - Celebration") against the metadata stored by
+        /// Plex. This is used as a fallback when the track's file path cannot be matched.
+        /// </summary>
+        /// <param name="extInfText">The artist/title text taken from an #EXTINF line.</param>
+        /// <param name="durationSeconds">Duration in seconds taken from the #EXTINF line, or 0 if unknown.</param>
+        /// <param name="filePath">The file path of the track from the playlist, used to suggest the album.</param>
+        /// <returns>The ratingKey of the matching track, or -1 if no match is found.</returns>
+        public static long GetRatingKeyFromMetadata(string extInfText, int durationSeconds, string filePath)
+        {
+            if (string.IsNullOrWhiteSpace(extInfText))
+                return -1;
+
+            // Some playlist writers use dashes other than a plain hyphen in "Artist - Title"
+            string text = extInfText.Replace('–', '-').Replace('—', '-').Trim();
+
+            // Work out the possible artist/title combinations. Normally this is "Artist - Title"
+            // but we also try splitting on the last separator in case the artist name itself
+            // contains a dash. If no separator is found then we assume it is just a title.
+            var candidates = new List<(string Artist, string Title)>();
+            int first = text.IndexOf(" - ", StringComparison.Ordinal);
+            if (first >= 0)
+            {
+                candidates.Add((text[..first].Trim(), text[(first + 3)..].Trim()));
+                int last = text.LastIndexOf(" - ", StringComparison.Ordinal);
+                if (last > first)
+                    candidates.Add((text[..last].Trim(), text[(last + 3)..].Trim()));
+            }
+            else
+                candidates.Add((string.Empty, text));
+
+            string albumHint = ExtractAlbumHint(filePath);
+
+            foreach (var (artist, title) in candidates)
+            {
+                string normalizedTitle = NormalizeMetadata(title);
+                if (normalizedTitle.Length == 0)
+                    continue;
+
+                // Preferred: match on the artist/title combination
+                string normalizedArtist = NormalizeMetadata(artist);
+                if (normalizedArtist.Length > 0 && _metadataMap.TryGetValue($"{normalizedArtist}|{normalizedTitle}", out var artistMatches))
+                {
+                    long ratingKey = SelectMetadataMatch(artistMatches, durationSeconds, albumHint, extInfText);
+                    if (ratingKey != -1)
+                        return ratingKey;
+                }
+
+                // Fallback: match on the title alone. This is only accepted when it
+                // identifies a single track (or a single track with a duration that fits).
+                if (_titleOnlyMap.TryGetValue(normalizedTitle, out var titleMatches))
+                {
+                    long ratingKey = SelectMetadataMatch(titleMatches, durationSeconds, albumHint, extInfText);
+                    if (ratingKey != -1)
+                        return ratingKey;
+                }
+            }
+
+            return -1;
+        }
+
+        /// <summary>
+        /// Picks the matching track from a list of metadata candidates. If multiple tracks share the
+        /// same metadata then the duration and album name (taken from the playlist) are used to
+        /// narrow the choice down. Returns -1 when a single match cannot be safely determined.
+        /// </summary>
+        /// <param name="candidates">Tracks whose normalized metadata matches the requested artist/title.</param>
+        /// <param name="durationSeconds">Duration in seconds taken from the #EXTINF line, or 0 if unknown.</param>
+        /// <param name="albumHint">Normalized album name suggested by the playlist's file path, or an empty string if unknown.</param>
+        /// <param name="extInfText">The original artist/title text, used for logging.</param>
+        /// <returns>The ratingKey of the matching track, or -1 if no single match can be determined.</returns>
+        static long SelectMetadataMatch(List<Globals.TrackInfo> candidates, int durationSeconds, string albumHint, string extInfText)
+        {
+            var remaining = candidates.DistinctBy(t => t.RatingKey).ToList();
+
+            if (remaining.Count == 1)
+                return remaining[0].RatingKey;
+
+            // Multiple tracks share the same metadata. If the playlist's file path suggests
+            // an album then use it to narrow the choice down.
+            if (albumHint.Length > 0)
+            {
+                var albumMatches = remaining.Where(t => NormalizeMetadata(t.Album) == albumHint).ToList();
+                if (albumMatches.Count == 1)
+                {
+                    Logger.Write($"Metadata match for '{extInfText}' was ambiguous, resolved using album '{albumHint}'.", true);
+                    return albumMatches[0].RatingKey;
+                }
+                if (albumMatches.Count > 1)
+                    remaining = albumMatches;
+            }
+
+            // If the playlist tells us how long the track should be then use that to
+            // narrow the choice down further
+            if (durationSeconds > 0)
+            {
+                var durationMatches = remaining
+                    .Where(t => t.Duration > 0 && Math.Abs(t.Duration - durationSeconds) <= DurationToleranceSeconds)
+                    .ToList();
+
+                if (durationMatches.Count == 1)
+                {
+                    Logger.Write($"Metadata match for '{extInfText}' was ambiguous, resolved using duration ({durationSeconds}s).", true);
+                    return durationMatches[0].RatingKey;
+                }
+                if (durationMatches.Count > 1)
+                    remaining = durationMatches;
+            }
+
+            Logger.Write($"Metadata match for '{extInfText}' is ambiguous: {GrammarHelper.Pluralise(remaining.Count, "candidate", "candidates")} found and no album or duration available to choose between them.", true);
+            return -1;
+        }
+
+        /// <summary>
+        /// Normalizes artist, album or title text so that metadata from an m3u file can be compared
+        /// with the metadata stored by Plex. The comparison is case-insensitive, ignores accents and
+        /// punctuation, and treats "&" as "and" (so "Kool & The Gang" matches "Kool and the Gang").
+        /// </summary>
+        /// <param name="text">Artist, album or title text to normalize.</param>
+        /// <returns>The normalized text, or an empty string if there is nothing left.</returns>
+        public static string NormalizeMetadata(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return string.Empty;
+
+            // m3u files often store "&" as the HTML entity "&amp;"
+            string normalized = text.Replace("&amp;", "&", StringComparison.OrdinalIgnoreCase);
+
+            // Treat "&" as "and" so that, e.g., "Kool & The Gang" and "Kool and the Gang" match
+            normalized = normalized.Replace("&", " and ");
+
+            // Decompose accented characters so that the accents can be stripped below
+            normalized = normalized.Normalize(NormalizationForm.FormD);
+
+            var builder = new StringBuilder(normalized.Length);
+            foreach (var c in normalized)
+            {
+                if (CharUnicodeInfo.GetUnicodeCategory(c) == UnicodeCategory.NonSpacingMark)
+                    continue;
+                builder.Append(char.IsWhiteSpace(c) ? ' ' : c);
+            }
+
+            // Strip any remaining punctuation, lowercase and collapse runs of whitespace
+            return string.Join(' ', builder
+                .ToString()
+                .ToLowerInvariant()
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .Select(word => new string(word.Where(char.IsLetterOrDigit).ToArray()))
+                .Where(word => word.Length > 0));
+        }
+
+        /// <summary>
+        /// Suggests the album a track belongs to based on its file path. The second-to-last
+        /// folder of a music path is normally the album (e.g. `artist/album/track`).
+        /// </summary>
+        /// <param name="filePath">The file path of the track, as stored in the playlist.</param>
+        /// <returns>The normalized album name, or an empty string if it cannot be determined.</returns>
+        static string ExtractAlbumHint(string filePath)
+        {
+            var parts = filePath.Split(_pathSeparators, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length < 2)
+                return string.Empty;
+
+            return NormalizeMetadata(parts[^2]);
+        }
+
+        /// <summary>Adds a track to a metadata map under the given key.</summary>
+        static void AddToMetadataMap(Dictionary<string, List<Globals.TrackInfo>> map, string key, Globals.TrackInfo track)
+        {
+            if (key.Length == 0)
+                return;
+
+            if (!map.TryGetValue(key, out var tracks))
+                map[key] = [track];
+            else
+                tracks.Add(track);
         }
 
         /// <summary>

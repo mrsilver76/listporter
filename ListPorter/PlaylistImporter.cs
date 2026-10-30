@@ -17,6 +17,8 @@
  * < https://www.gnu.org/licenses/>.
  */
 
+using System.Globalization;
+
 namespace ListPorter
 {
     /// <summary>
@@ -103,12 +105,40 @@ namespace ListPorter
 
             var lines = File.ReadAllLines(filePath);
             bool playlistTitleFound = false;
-            int failed = 0, added = 0;
+            int failed = 0, added = 0, matchedByMetadata = 0;
+
+            // Metadata taken from the most recent #EXTINF line. Extended M3U files place this
+            // immediately before the track it describes, so we hold onto it until we process
+            // the file path which follows it.
+            string extInfText = "";
+            int extInfDuration = 0;
 
             foreach (var rawLine in lines)
             {
                 // Trim whitespace and normalize the line to NFC form to ensure consistent handling of Unicode characters
                 string line = rawLine.Trim().Normalize(System.Text.NormalizationForm.FormC);
+
+                // Extended M3U files include an #EXTINF line before each track, containing the
+                // track duration and (usually) the artist and title in the form "Artist - Title".
+                if (line.StartsWith("#EXTINF:", StringComparison.OrdinalIgnoreCase))
+                {
+                    extInfText = "";
+                    extInfDuration = 0;
+
+                    int comma = line.IndexOf(',');
+                    if (comma >= 0)
+                    {
+                        extInfText = line[(comma + 1)..].Trim();
+
+                        // Durations can be fractional (e.g. "298.0") or "-1" when the duration is unknown
+                        if (double.TryParse(line[8..comma].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out double seconds) && seconds > 0)
+                            extInfDuration = (int)Math.Round(seconds);
+                    }
+                    else
+                        extInfText = line[8..].Trim();
+
+                    continue;
+                }
 
                 if (string.IsNullOrEmpty(line) || line.StartsWith('#') && !line.StartsWith("#PLAYLIST:", StringComparison.CurrentCulture))
                     continue;
@@ -135,9 +165,26 @@ namespace ListPorter
 
                     // See if we can find the item stored within Plex
                     long ratingKey = PlexService.GetRatingKeyFromFilePath(rewrittenLine);
+
+                    // If the path couldn't be matched and the playlist tells us the artist and
+                    // title, try matching against the Plex library using that instead
+                    if (ratingKey == -1 && Globals.UseMetadataMatching && extInfText.Length > 0)
+                    {
+                        ratingKey = PlexService.GetRatingKeyFromMetadata(extInfText, extInfDuration, rewrittenLine);
+                        if (ratingKey != -1)
+                        {
+                            matchedByMetadata++;
+
+                            if (Globals.VerboseMode)
+                                Logger.Write($"Matched '{extInfText}' to Plex using artist/title metadata (ratingKey: {ratingKey})", true);
+                        }
+                    }
+
                     if (ratingKey == -1)
                     {
-                        if (rewrittenLine == line)
+                        if (Globals.UseMetadataMatching && extInfText.Length > 0)
+                            Logger.Write($"No match found in Plex library {Globals.PlexLibrary} for path '{line}' or metadata '{extInfText}' in: {filePath}", verbosity);
+                        else if (rewrittenLine == line)
                             Logger.Write($"No match found in Plex library {Globals.PlexLibrary} for path '{line}' in: {filePath}", verbosity);
                         else
                             Logger.Write($"No match found in Plex library {Globals.PlexLibrary} for path '{rewrittenLine}' (tranformed from '{line}') in: {filePath}", verbosity);
@@ -165,6 +212,10 @@ namespace ListPorter
                         if (Globals.VerboseMode)
                             Logger.Write($"Added to playlist: {rewrittenLine} (ratingKey: {ratingKey})", true);
                     }
+
+                    // The metadata only applies to the track which follows the #EXTINF line
+                    extInfText = "";
+                    extInfDuration = 0;
                 }
             }
 
@@ -174,6 +225,10 @@ namespace ListPorter
                 ImportedPlaylistTitle = Path.GetFileNameWithoutExtension(filePath);
                 Logger.Write($"Missing #PLAYLIST, assuming title: {ImportedPlaylistTitle}", true);
             }
+
+            // Report how many tracks were matched using the artist/title metadata
+            if (matchedByMetadata > 0)
+                Logger.Write($"{GrammarHelper.Pluralise(matchedByMetadata, "item", "items")} in '{ImportedPlaylistTitle}' matched using artist/title metadata.");
 
             if (added == 0 && failed == 0)
             {

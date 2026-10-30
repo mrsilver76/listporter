@@ -149,6 +149,15 @@ namespace ListPorter
 
                 bool isDeleted = media?.Attribute("deletedAt") != null;
 
+                // Track metadata, used for matching when the file path cannot be matched
+                string? title = track.Attribute("title")?.Value.Normalize(NormalizationForm.FormC);
+                string? albumArtist = track.Attribute("grandparentTitle")?.Value.Normalize(NormalizationForm.FormC);
+                string? trackArtist = track.Attribute("originalTitle")?.Value.Normalize(NormalizationForm.FormC);
+                string? album = track.Attribute("parentTitle")?.Value.Normalize(NormalizationForm.FormC);
+                int durationSeconds = 0;
+                if (long.TryParse(track.Attribute("duration")?.Value, out long durationMs) && durationMs > 0)
+                    durationSeconds = (int)Math.Round(durationMs / 1000.0);
+
                 if (string.IsNullOrEmpty(ratingKeyStr) || !long.TryParse(ratingKeyStr, out long ratingKey) || ratingKey <= 0)
                 {
                     Logger.Write($"Track skipped: missing/invalid ratingKey for: {filePath ?? "[unknown path]"}");
@@ -167,7 +176,12 @@ namespace ListPorter
                 Globals.PlexTrackList.Add(new Globals.TrackInfo
                 {
                     RatingKey = ratingKey,
-                    FilePath = filePath
+                    FilePath = filePath,
+                    Artist = albumArtist ?? string.Empty,
+                    TrackArtist = (trackArtist != null && trackArtist != albumArtist) ? trackArtist : string.Empty,
+                    Album = album ?? string.Empty,
+                    Title = title ?? string.Empty,
+                    Duration = durationSeconds
                 });
 
                 if (Globals.VerboseMode)

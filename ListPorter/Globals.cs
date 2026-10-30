@@ -37,9 +37,10 @@ namespace ListPorter
         }
 
         /// <summary>
-        /// Class representing an audio track with its ratingKey and file path. We will use this
-        /// in two ways (1) to store every single song stored in Plex, and (2) to store
-        /// the contents of a playlist that we are importing.
+        /// Class representing an audio track with its ratingKey and file path, plus (for tracks
+        /// fetched from Plex) the artist/album/title metadata used for artist/title matching.
+        /// We will use this in two ways (1) to store every single song stored in Plex, and
+        /// (2) to store the contents of a playlist that we are importing.
         /// </summary>
         public sealed class TrackInfo
         {
@@ -47,6 +48,16 @@ namespace ListPorter
             public long RatingKey { get; set; }
             /// <summary>The file path of the track.</summary>
             public string FilePath { get; set; } = string.Empty;
+            /// <summary>The artist of the album the track belongs to (Plex: grandparentTitle). Only populated for tracks fetched from Plex.</summary>
+            public string Artist { get; set; } = string.Empty;
+            /// <summary>The artist of the individual track, when different to the album artist (Plex: originalTitle). Only populated for tracks fetched from Plex.</summary>
+            public string TrackArtist { get; set; } = string.Empty;
+            /// <summary>The album the track belongs to (Plex: parentTitle). Only populated for tracks fetched from Plex.</summary>
+            public string Album { get; set; } = string.Empty;
+            /// <summary>The title of the track (Plex: title). Only populated for tracks fetched from Plex.</summary>
+            public string Title { get; set; } = string.Empty;
+            /// <summary>Duration of the track in seconds (0 if unknown). Only populated for tracks fetched from Plex.</summary>
+            public int Duration { get; set; }
         }
 
         // Path re-writing options
@@ -127,6 +138,9 @@ namespace ListPorter
 
         /// <summary>Whether to use fuzzy matching (disabled if path rewriting is used)</summary>
         public static bool UseFuzzyMatching { get; set; } = true;
+
+        /// <summary>Whether to match tracks by the artist/title metadata stored in #EXTINF lines when path matching fails</summary>
+        public static bool UseMetadataMatching { get; set; } = true;
 
         /// <summary>Whether path rewriting (find/replace or Unix/Windows) is in use</summary>
         public static bool UsingPathRewriting { get; set; }

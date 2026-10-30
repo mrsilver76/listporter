@@ -158,7 +158,8 @@ D:\Music\Artist\Album\Track.mp3
 
 - ListPorter first checks Plex directly for an exact match.
 - If none is found, it uses automatic fuzzy matching (assuming the path ends with `artist/album/track` or `artist\album\track`).
-- If these components differ substantially, or are missing, the match will fail.
+- If the path still can't be matched, it falls back to matching by the artist and title stored in the playlist's `#EXTINF` lines. When several tracks share the same artist and title, the duration (from `#EXTINF`) and the album name (from the file path) are used to pick the right one.
+- If the artist/title combination is ambiguous - for example the same song appears on multiple albums with the same duration - ListPorter won't guess and reports the item as unmatched.
 
 ### How to fix it
 

@@ -55,6 +55,9 @@ namespace ListPorter
             // Build fuzzy path map if fuzzy matching is enabled
             PlexService.BuildFuzzyPathMap();
 
+            // Build artist/title metadata map if metadata matching is enabled
+            PlexService.BuildMetadataMap();
+
             // Fetch and store all playlists from Plex
             PlexClient.FetchAndStorePlaylists(true);
 
