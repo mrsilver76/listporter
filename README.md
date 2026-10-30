@@ -19,6 +19,7 @@ ListPorter works with playlists exported by common music players and library man
 * ✅ Skips importing playlists that haven’t changed.
 * 🪞 Mirrors Plex playlists to match imported M3U files.
 * 🎯 Fuzzy matching logic (using last three path parts) to improve playlist-to-Plex matching.
+* 🎵 Artist/title matching: if a path can't be matched, the artist and title from the playlist are used to find the track in Plex.
 * 🔁 Force playlist paths to use `/` or `\` to match your Plex server’s file format.
 * 🛠️ Rewrite playlist paths using find & replace rules to match your Plex library.
 * 🧭 Prepend a base path to support relative paths in playlists.
@@ -168,7 +169,16 @@ ListPorter tries to match each file path in your playlist with the paths Plex ha
 
 This approach works well when root paths differ or when file systems vary across devices, as long as the layout near the file itself is consistent. However, if files have been renamed or stored with a different folder hierarchy, exact or fuzzy matching may fail.
 
-**Fuzzy matching is automatically disabled when using `-f` (`--find`) or `-b` (`--base-path`), as these options explicitly rewrite how paths are interpreted.** Other options, including `-w` (`--windows`) and `-u` (`--unix`) do not disable fuzzy matching because separator differences between Windows and Unix are handled automatically.
+### Artist/title matching
+
+If a track can't be matched by its path, ListPorter falls back to matching by metadata. Extended M3U playlists include an `#EXTINF` line before each track which usually contains the artist and title (e.g. `#EXTINF:298,Kool & The Gang - Celebration`). ListPorter compares this against the artist and title Plex has stored for each track, ignoring differences in case, accents, punctuation and `&`/`and`. This means a playlist can be imported even when none of its paths resemble the Plex library - for example, when a playlist references a compilation or was created on a completely different system.
+
+When several tracks share the same artist and title (e.g. a studio album and a "greatest hits" album), the track duration from the `#EXTINF` line and the album name (taken from the file path) are used to pick the right one. If the match is still ambiguous, ListPorter won't guess - the track is reported as unmatched.
+
+> [!NOTE]
+> The artist/title fallback also works when the `#EXTINF` line contains just a title, but only if that title uniquely identifies a single track in your library.
+
+**Fuzzy matching is automatically disabled when using `-f` (`--find`) or `-b` (`--base-path`), as these options explicitly rewrite how paths are interpreted.** Artist/title matching is unaffected by path rewriting, so the two can be combined. Other options, including `-w` (`--windows`) and `-u` (`--unix`) do not disable fuzzy matching because separator differences between Windows and Unix are handled automatically.
 
 These options don’t modify the playlist files themselves - they only affect how paths are interpreted during import.
 
@@ -193,7 +203,10 @@ Specifies a base path to prepend to all playlist entries. This is useful when yo
   The base path is applied after all other rewriting options (such as `--find`/`--replace` or `--unix`/`--windows`) and will affect all playlists in the current run.
 
 - **`-x`, `--exact-only`**   
-Disables fuzzy matching and any automatic path adjustments. Only exact, case-insensitive matches will be used to link playlist files to Plex tracks. Use this if you want full control and are relying entirely on exact paths or other file rewriting options listed above.
+Disables fuzzy path matching, artist/title metadata matching and any automatic path adjustments. Only exact, case-insensitive matches will be used to link playlist files to Plex tracks. Use this if you want full control and are relying entirely on exact paths or other file rewriting options listed above.
+
+- **`--no-metadata`**   
+Disables matching by artist/title metadata. By default, if a track cannot be matched by its file path then the artist and title from the `#EXTINF` line is used to find it in Plex.
 
 ### Other options
 

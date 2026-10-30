@@ -86,7 +86,8 @@ namespace ListPorter
                     ("-f, --find <text>", "Find text within each song path so that it can be replaced. Disables fuzzy path matching."),
                     ("-r, --replace <text>", "Replace the text found by --find with <text>. If omitted, the found text is removed. Requires --find."),
                     ("-b, --base-path <path>", "Base path to prepend to relative song paths in the playlist. Disables fuzzy path matching."),
-                    ("-x, --exact-only", "Disable fuzzy path matching so that only exact path matches are used. By default, if no exact match is found then the last three parts of the path (artist, album and track) are compared.")
+                    ("-x, --exact-only", "Disable fuzzy path matching so that only exact path matches are used. By default, if no exact match is found then the last three parts of the path (artist, album and track) are compared. Also disables artist/title metadata matching."),
+                    ("--no-metadata", "Disable matching tracks by artist/title metadata. By default, if a track cannot be matched by its file path then the artist and title from the #EXTINF line is used to find it in Plex.")
                 ],
 
                 ["Other options"] =
@@ -98,8 +99,11 @@ namespace ListPorter
                 ]
             };
 
-            // Determine max line width (at least 50 chars, or console width - 5)
-            int maxLineWidth = Math.Max(Console.WindowWidth, 50) - 5;
+            // Determine max line width (at least 50 chars, or console width - 5).
+            // Console.WindowWidth fails when output is redirected, so fall back to a default width.
+            int consoleWidth;
+            try { consoleWidth = Console.WindowWidth; } catch { consoleWidth = 80; }
+            int maxLineWidth = Math.Max(consoleWidth, 50) - 5;
 
             // Find max option length across all sections for consistent column width
             int firstColWidth = 0;

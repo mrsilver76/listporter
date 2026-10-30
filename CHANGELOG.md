@@ -1,5 +1,11 @@
 # Version history
 
+## 1.3.0 (29 October 2026)
+- Added artist/title matching: when a track's file path can't be matched to the Plex library, ListPorter now falls back to using the artist and title stored in the playlist's `#EXTINF` lines to find the track. This makes it possible to import playlists whose paths bear no resemblance to the Plex library (e.g. playlists which reference compilations, or playlists created on a completely different system).
+- The fallback is enabled by default. When multiple tracks share the same artist and title, the track duration (from `#EXTINF`) and album name (from the file path) are used to pick the right one. If the match is still ambiguous, the track is reported as unmatched rather than guessing.
+- Added `--no-metadata` to disable the artist/title fallback matching.
+- `-x` (`--exact-only`) now also disables artist/title metadata matching.
+
 ## 1.2.0 (23 September 2026)
 - Added automatic detection of the Plex music library. Use of `-l` (`--library`) is no longer required when the server has only one music library. If you have more than one library, ListPorter will list them so you can add `-l` to your command line.
 - Improved the formatting of the help output, which now word-wraps based on the terminal width.

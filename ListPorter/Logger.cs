@@ -74,11 +74,13 @@ namespace ListPorter
                 AppDomain.CurrentDomain.UnhandledException += (sender, e) =>
                 {
                     // Make sure that the cursor is visible again if we crash
-                    Console.CursorVisible = true;
+                    try { Console.CursorVisible = true; } catch { }
                 };
 
-                // Hide the console cursor to prevent it from distracting from log messages
-                Console.CursorVisible = false;
+                // Hide the console cursor to prevent it from distracting from log messages.
+                // Setting CursorVisible fails when output is redirected (e.g. piping the output
+                // to another program), so ignore any error rather than crashing.
+                try { Console.CursorVisible = false; } catch { }
 
                 _initialised = true;
             }
@@ -157,8 +159,9 @@ namespace ListPorter
         /// </summary>
         private static void Shutdown()
         {
-            // Restore the console cursor visibility
-            Console.CursorVisible = true;
+            // Restore the console cursor visibility. This can fail when output is
+            // redirected, so ignore any error rather than crashing during shutdown.
+            try { Console.CursorVisible = true; } catch { }
 
             lock (_lock)
             {

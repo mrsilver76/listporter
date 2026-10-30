@@ -124,8 +124,13 @@ namespace ListPorter
                     Globals.PathStyleOption = Globals.PathStyle.ForceWindows;
                 else if (arg == "-v" || arg == "--verbose")
                     Globals.VerboseMode = true;
-                else if (arg == "-x" || arg == "--exact-only")  // Disable fuzzy matching
+                else if (arg == "-x" || arg == "--exact-only")  // Disable fuzzy path matching and metadata matching
+                {
                     Globals.UseFuzzyMatching = false;
+                    Globals.UseMetadataMatching = false;
+                }
+                else if (arg == "--no-metadata")  // Disable artist/title metadata matching
+                    Globals.UseMetadataMatching = false;
                 else if (arg == "-k" || arg == "--update")  // Update Plex library before importing
                     Globals.UpdateLibrary = true;
                 else if (arg == "-nc" || arg == "--no-check")
